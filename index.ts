@@ -21,6 +21,12 @@ type ChatMsgPayload = {
     meta: any
 }
 
+type EmotePayload = {
+    name: string,
+    image: string,
+    source: string
+}
+
 function getAvatar(name: string): string {
     return name == 'ribet' ? 'https://files.catbox.moe/tns833.png'
          : name == 'UntElHuevo' ? 'https://files.catbox.moe/cr6h8v.png'
@@ -28,7 +34,7 @@ function getAvatar(name: string): string {
          : 'https://bnarcade.coolpage.biz/resources/garg1.png'
 }
 
-function msgToMarkdown(msg: string): string {
+function msgToMarkdown(msg: string, emotes: EmotePayload[]): string {
     function parseList(list: ChildNode[]): string {
         return list.map(parseNode).join('')
     }
@@ -48,8 +54,16 @@ function msgToMarkdown(msg: string): string {
              : ''
     }
 
-    function parseText(text: string) {
-        return text.replaceAll(/([#<>@\[\]\(\)-*_~`|:/\\.])/g, '\\$1');
+    function parseText(data: string) {
+        let text = data.replaceAll(/([#<>@\[\]\(\)-*_~`|:/\\.])/g, '\\$1');
+
+        for (const emote of emotes) {
+            // https://github.com/calzoneman/sync/blob/3.0/src/channel/emotes.js
+            const reg = new RegExp(emote.source, 'gi')
+            text = text.replaceAll(reg, `[${emote.name}](${emote.image})`)
+        }
+
+        return text
     }
 
     function parseNode(el: ChildNode) {
@@ -65,7 +79,8 @@ function msgToMarkdown(msg: string): string {
 
 function chatMsgToWebhook(
     {username, msg, time, meta}: ChatMsgPayload,
-    webhook: string
+    webhook: string,
+    emotes: EmotePayload[]
 ) {
     return new Request(webhook, {
         method: 'post',
@@ -73,7 +88,7 @@ function chatMsgToWebhook(
         body: JSON.stringify({
             username: username,
             avatar_url: getAvatar(username),
-            content: msgToMarkdown(msg)
+            content: msgToMarkdown(msg, emotes)
         })
     })
 }
@@ -112,6 +127,13 @@ socket.once('connect', () => {
             pw: config.password
         })
     })
+
+    let emotes: EmotePayload[] = []
+
+    socket.on('emoteList', (data: EmotePayload[]) => {
+        emotes = data
+    })
+
     socket.once('login', (data) => {
         if(!data.success) {
             throw new Error(`Couldn't log in: ${JSON.stringify(data)}`)
@@ -128,7 +150,7 @@ socket.once('connect', () => {
             if (config.webhook == undefined)
                 return;
 
-            const request = chatMsgToWebhook(data, config.webhook)
+            const request = chatMsgToWebhook(data, config.webhook, emotes)
             fetch(request)
         })
     })

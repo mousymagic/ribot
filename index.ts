@@ -38,6 +38,17 @@ type AddUserPayload = {
 
 type UserLeavePayload = { name: string }
 
+type ChangeMediaPayload = {
+    id: string,
+    title: string,
+    seconds: number,
+    duration: string,
+    type: 'yt',
+    meta: object,
+    currentTime: number,
+    paused: boolean
+}
+
 function getAvatar(name: string): string {
     return name == 'ribet' ? 'https://files.catbox.moe/tns833.png'
          : name == 'UntElHuevo' ? 'https://files.catbox.moe/cr6h8v.png'
@@ -134,6 +145,17 @@ function userLeaveToWebhook({name}: UserLeavePayload, webhook: string) {
     })
 }
 
+function changeMediaToWebhook(data: ChangeMediaPayload, webhook: string) {
+    return new Request(webhook, {
+        method: 'post',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            content:
+                `[Now playing...](https://www.youtube.com/watch?v=${data.id})`
+        })
+    })
+}
+
 /*
 const response = await fetch(socketUrl(config))
 const text = await response.json()
@@ -206,6 +228,14 @@ socket.once('connect', () => {
                 return;
 
             const request = userLeaveToWebhook(data, config.webhook)
+            fetch(request)
+        })
+
+        socket.on('changeMedia', (data: ChangeMediaPayload) => {
+            if (config.webhook == undefined)
+                return;
+
+            const request = changeMediaToWebhook(data, config.webhook)
             fetch(request)
         })
     })

@@ -4,6 +4,11 @@ import { io } from 'socket.io-client'
 import { parseDocument, ElementType } from 'htmlparser2'
 import { type ChildNode, Element } from 'domhandler'
 
+import {
+    type EmotePayload, type ChatMsgPayload, type AddUserPayload,
+    type UserLeavePayload, type ChangeMediaPayload, type UserRank
+} from './cytubeTypes'
+
 // https://github.com/Xaekai/PonkBot/blob/1f557b4214b25c344fa83964ae90666259eb371a/lib/client.js
 // https://github.com/Xaekai/PonkBot/blob/1f557b4214b25c344fa83964ae90666259eb371a/lib/ponkbot.js
 
@@ -12,41 +17,6 @@ function socketUrl({secure, host, port, channel}: Config) {
         `${secure ? 'https' : 'http'}://${host}:${port}/` +
         `socketconfig/${channel}.json`
     )
-}
-
-type ChatMsgPayload = {
-    username: string,
-    msg: string,
-    time: Date,
-    meta: any
-}
-
-type EmotePayload = {
-    name: string,
-    image: string,
-    source: string
-}
-
-type UserRank = 1 | 2 | 3 | 4 | 5
-
-type AddUserPayload = {
-    name: string,
-    rank: UserRank,
-    profile: object,
-    meta: object
-}
-
-type UserLeavePayload = { name: string }
-
-type ChangeMediaPayload = {
-    id: string,
-    title: string,
-    seconds: number,
-    duration: string,
-    type: 'yt',
-    meta: object,
-    currentTime: number,
-    paused: boolean
 }
 
 function getAvatar(name: string): string {

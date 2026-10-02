@@ -18,6 +18,28 @@ type ChatMsgPayload = {
     meta: any
 }
 
+function getAvatar(name: string): string {
+    return name == 'ribet' ? 'https://files.catbox.moe/tns833.png'
+         : name == 'UntElHuevo' ? 'https://files.catbox.moe/cr6h8v.png'
+         : name == 'IndecentExtortionist' ? 'https://files.catbox.moe/its8mh.png'
+         : 'https://bnarcade.coolpage.biz/resources/garg1.png'
+}
+
+function chatMsgToWebhook(
+    {username, msg, time, meta}: ChatMsgPayload,
+    webhook: string
+) {
+    return new Request(webhook, {
+        method: 'post',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            username: username,
+            avatar_url: getAvatar(username),
+            content: msg
+        })
+    })
+}
+
 console.log(socketUrl(config));
 
 /*
@@ -62,32 +84,14 @@ socket.once('connect', () => {
             throw new Error(`Disconnected. ${reason}`)
         })
 
-        function getAvatar(name: string): string {
-            return name == 'ribet' ? 'https://files.catbox.moe/tns833.png'
-                 : name == 'UntElHuevo' ? 'https://files.catbox.moe/cr6h8v.png'
-                 : name == 'IndecentExtortionist' ? 'https://files.catbox.moe/its8mh.png'
-                 : 'https://bnarcade.coolpage.biz/resources/garg1.png'
-        }
+        socket.on('chatMsg', (data: ChatMsgPayload) => {
+            console.log(`[${data.username}]: ${data.msg}`)
 
-        function handleChatMsg({username, msg, time, meta}: ChatMsgPayload) {
-            console.log(`[${username}]: ${msg}`)
-            
-            if(config.webhook == undefined)
+            if (config.webhook == undefined)
                 return;
 
-            fetch(config.webhook, {
-                method: 'post',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    username: username,
-                    avatar_url: getAvatar(username),
-                    content: msg
-                })
-            })
-        }
-
-        socket.on('chatMsg', handleChatMsg)
+            const request = chatMsgToWebhook(data, config.webhook)
+            fetch(request)
+        })
     })
 })

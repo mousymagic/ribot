@@ -1,6 +1,9 @@
 import { config, type Config } from './config'
 import { io } from 'socket.io-client'
 
+import { parseDocument, ElementType } from 'htmlparser2'
+import { type ChildNode, Element } from 'domhandler'
+
 // https://github.com/Xaekai/PonkBot/blob/1f557b4214b25c344fa83964ae90666259eb371a/lib/client.js
 // https://github.com/Xaekai/PonkBot/blob/1f557b4214b25c344fa83964ae90666259eb371a/lib/ponkbot.js
 
@@ -25,6 +28,41 @@ function getAvatar(name: string): string {
          : 'https://bnarcade.coolpage.biz/resources/garg1.png'
 }
 
+function msgToMarkdown(msg: string): string {
+    function parseList(list: ChildNode[]): string {
+        return list.map(parseNode).join('')
+    }
+
+    function parseElement(el: Element) {
+        const body = parseList(el.children)
+        const attr = el.attribs
+        const name = el.name
+
+        return name == 'span' && attr.class == 'spoiler' ? `||${body}||`
+             : name == 'a' && attr.href == body ? body
+             : name == 'a' ? `[${body}](${attr.href})`
+             : name == 'code' ? `\`${body}\``
+             : name == 'strong' ? `**${body}**`
+             : name == 's' ? `~~${body}~~`
+             : name == 'em' ? `*${body}*`
+             : ''
+    }
+
+    function parseText(text: string) {
+        return text.replaceAll(/([#<>@\[\]\(\)-*_~`|:/\\.])/g, '\\$1');
+    }
+
+    function parseNode(el: ChildNode) {
+        return el.type == ElementType.Tag ? parseElement(el)
+             : el.type == ElementType.Text ? parseText(el.data)
+             : ''
+    }
+
+    const dom = parseDocument(msg)
+
+    return parseList(dom.children)
+}
+
 function chatMsgToWebhook(
     {username, msg, time, meta}: ChatMsgPayload,
     webhook: string
@@ -35,7 +73,7 @@ function chatMsgToWebhook(
         body: JSON.stringify({
             username: username,
             avatar_url: getAvatar(username),
-            content: msg
+            content: msgToMarkdown(msg)
         })
     })
 }

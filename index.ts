@@ -27,6 +27,17 @@ type EmotePayload = {
     source: string
 }
 
+type UserRank = 1 | 2 | 3 | 4 | 5
+
+type AddUserPayload = {
+    name: string,
+    rank: UserRank,
+    profile: object,
+    meta: object
+}
+
+type UserLeavePayload = { name: string }
+
 function getAvatar(name: string): string {
     return name == 'ribet' ? 'https://files.catbox.moe/tns833.png'
          : name == 'UntElHuevo' ? 'https://files.catbox.moe/cr6h8v.png'
@@ -93,7 +104,35 @@ function chatMsgToWebhook(
     })
 }
 
-console.log(socketUrl(config));
+function userJoinToWebhook({ name }: AddUserPayload, webhook: string) {
+    return new Request(webhook, {
+        method: 'post',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            embeds: [{
+                footer: {
+                    text: `${name} joined the room`,
+                    icon_url: getAvatar(name)
+                }
+            }]
+        })
+    })
+}
+
+function userLeaveToWebhook({name}: UserLeavePayload, webhook: string) {
+    return new Request(webhook, {
+        method: 'post',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            embeds: [{
+                footer: {
+                    text: `${name} left the room`,
+                    icon_url: getAvatar(name)
+                }
+            }]
+        })
+    })
+}
 
 /*
 const response = await fetch(socketUrl(config))
@@ -120,7 +159,7 @@ socket.once('connect', () => {
     socket.once('needPassword', () => {
         throw new Error('Channel requires password. Not supported yet.')
     })
-    socket.once('rank', () => {
+    socket.once('rank', (rank: UserRank) => {
         console.log("  Sending credentials...")
         socket.emit('login', {
             name: config.username,
@@ -151,6 +190,22 @@ socket.once('connect', () => {
                 return;
 
             const request = chatMsgToWebhook(data, config.webhook, emotes)
+            fetch(request)
+        })
+
+        socket.on('addUser', (data: AddUserPayload) => {
+            if (config.webhook == undefined || data.name == config.username)
+                return;
+
+            const request = userJoinToWebhook(data, config.webhook)
+            fetch(request)
+        })
+
+        socket.on('userLeave', (data: UserLeavePayload) => {
+            if (config.webhook == undefined)
+                return;
+
+            const request = userLeaveToWebhook(data, config.webhook)
             fetch(request)
         })
     })

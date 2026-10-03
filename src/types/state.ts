@@ -27,6 +27,8 @@ export type State = {
     emotes: cytube.EmotePayload[],
     playlist: cytube.QueueItem[],
     currentItem: number,
+    rank: cytube.UserRank,
+    permissions?: cytube.Permissions,
     
     // Discord auth
     webhook?: string,

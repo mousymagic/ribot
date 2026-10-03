@@ -10,7 +10,8 @@ import type { State } from './types/state'
 import type { Effect, Module } from './types/effects'
 import type {
     EmotePayload, PlaylistPayload, QueuePayload, DeletePayload, UserRank,
-    SetTempPayload, MoveVideoPayload, SetCurrentPayload
+    SetTempPayload, MoveVideoPayload, SetCurrentPayload, Permissions,
+    SetUserRankPayload
 } from './types/cytube'
 
 import { EventEmitter } from 'node:events'
@@ -53,6 +54,8 @@ let state: State = {
     emotes: [],
     playlist: [],
     currentItem: 0,
+    rank: -1,
+    permissions: undefined,
 
     webhook: conf.discord.webhook,
     token: conf.discord.token
@@ -106,6 +109,7 @@ socket.once('connect', () => {
     })
     socket.once('rank', (rank: UserRank) => {
         console.log("  Sending credentials...")
+        state.rank = rank
         socket.emit('login', {
             name: state.username,
             pw: state.password
@@ -141,6 +145,15 @@ socket.once('login', (data) => {
             })
         }
     }
+})
+
+socket.on('setPermissions', (perms: Permissions) => {
+    state.permissions = perms
+})
+
+socket.on('setUserRank', ({ name, rank }: SetUserRankPayload) => {
+    if(name == state.username)
+        state.rank = rank
 })
 
 socket.on('disconnect', (reason) => {

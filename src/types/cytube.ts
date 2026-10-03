@@ -19,7 +19,21 @@ export type EmotePayload = {
     source: string
 }
 
-export type UserRank = 1 | 2 | 3 | 4 | 5
+export type Permission =
+    'seeplaylist' | 'playlistadd' | 'playlistnext' | 'playlistmove' |
+    'playlistdelete' | 'playlistjump' | 'playlistaddlist' | 'oplaylistadd' |
+    'oplaylistnext' | 'oplaylistmove' | 'oplaylistdelete' | 'oplaylistjump' |
+    'oplaylistaddlist' | 'playlistaddcustom' | 'playlistaddrawfile' |
+    'playlistaddlive' | 'exceedmaxlength' | 'addnontemp' | 'settemp' |
+    'playlistshuffle' | 'playlistclear' | 'pollctl' | 'pollvote' |
+    'viewhiddenpoll' | 'voteskip' | 'viewvoteskip' | 'mute' | 'kick' | 'ban' |
+    'motdedit' | 'filteredit' | 'filterimport' | 'emoteedit' | 'emoteimport' |
+    'playlistlock' | 'leaderctl' | 'drink' | 'chat' | 'chatclear' |
+    'exceedmaxitems' | 'deletefromchannellib' | 'exceedmaxdurationperuser'
+
+export type UserRank = -1 | 1 | 1.5 | 2 | 3 | 4 | 5
+
+export type Permissions = {[perm in Permission]: UserRank}
 
 export type AddUserPayload = {
     name: string,

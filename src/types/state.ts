@@ -8,6 +8,8 @@
 
 import * as cytube from './cytube'
 
+import { Socket } from 'socket.io-client'
+
 export type State = {
     // Cytube auth information
     host: string,
@@ -18,6 +20,7 @@ export type State = {
     channelPassword?: string,
 
     // Cytube session
+    socket: Socket,
     emotes: cytube.EmotePayload[]
     
     // Discord auth

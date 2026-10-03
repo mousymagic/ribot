@@ -15,6 +15,25 @@ import { Client, Events, GatewayIntentBits } from 'discord.js'
 import * as conf from '../config.toml'
 import { io } from 'socket.io-client'
 
+/*
+const response = await fetch(socketUrl(config))
+const text = await response.json()
+*/
+
+const text = {
+  servers: [
+    {
+      url: "https://bigapple.cytu.be:8443",
+      secure: true,
+    }, {
+      url: "http://bigapple.cytu.be:8880",
+      secure: false,
+    }
+  ],
+}
+
+const socket = io(text.servers[0]?.url)
+
 let state: State = {
     host: conf.cytube.host,
     port: conf.cytube.port, secure: conf.cytube.secure,
@@ -23,6 +42,7 @@ let state: State = {
     channel: conf.cytube.channel,
     channelPassword: undefined,
 
+    socket: socket,
     emotes: [],
 
     webhook: conf.discord.webhook,
@@ -66,25 +86,6 @@ function socketUrl({secure, host, port, channel}: State) {
         `socketconfig/${channel}.json`
     )
 }
-
-/*
-const response = await fetch(socketUrl(config))
-const text = await response.json()
-*/
-
-const text = {
-  servers: [
-    {
-      url: "https://bigapple.cytu.be:8443",
-      secure: true,
-    }, {
-      url: "http://bigapple.cytu.be:8880",
-      secure: false,
-    }
-  ],
-}
-
-const socket = io(text.servers[0]?.url)
 
 socket.on('error', err => {throw new Error(err)})
 

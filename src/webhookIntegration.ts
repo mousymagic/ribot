@@ -112,12 +112,7 @@ function onUserLeave({ name }: UserLeavePayload, { webhook }: State) {
 
 function onChangeMedia(data: ChangeMediaPayload, { webhook }: State) {
     return webhookRequest({
-        method: 'post',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            content:
-                `[Now playing...](https://www.youtube.com/watch?v=${data.id})`
-        })
+        content: `[Now playing...](https://www.youtube.com/watch?v=${data.id})`
     }, webhook)
 }
 

@@ -10,7 +10,7 @@ import { type Module, type Effect, Nothing } from './types/effects.ts'
 import type { State } from './types/state.ts'
 import type {
     ChatMsgPayload, AddUserPayload, EmotePayload,
-    UserLeavePayload, ChangeMediaPayload
+    UserLeavePayload, SetCurrentPayload
 } from './types/cytube.ts'
 
 import { parseDocument, ElementType } from 'htmlparser2'
@@ -110,10 +110,23 @@ function onUserLeave({ name }: UserLeavePayload, { webhook }: State) {
     }, webhook)
 }
 
-function onChangeMedia(data: ChangeMediaPayload, { webhook }: State) {
+function getVideo(state: State, id: number) {
+    return state.playlist.findIndex(({ uid }) => uid == id)
+}
+
+function onSetCurrent(data: SetCurrentPayload, state: State): Effect {
+    const index = getVideo(state, data)
+    const item = index != -1 ? state.playlist[index] : undefined
+
+    if(item == undefined)
+        return Nothing
+
     return webhookRequest({
-        content: `[Now playing...](https://www.youtube.com/watch?v=${data.id})`
-    }, webhook)
+        content: `Now playing \
+[${item.media.title}](https://www.youtube.com/watch?v=${item.media.id})
+-# Added by ${item.queueby}`
+        
+    }, state.webhook)
 }
 
 export const module: Module = {
@@ -122,6 +135,6 @@ export const module: Module = {
         chatMsg: onChatMsg,
         addUser: onAddUser,
         userLeave: onUserLeave,
-        changeMedia: onChangeMedia
+        setCurrent: onSetCurrent
     }
 }

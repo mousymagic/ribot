@@ -10,6 +10,8 @@ import type { State } from './types/state'
 import type { Effect, Module } from './types/effects'
 import type { EmotePayload, UserRank } from './types/cytube'
 
+import { Client, Events, GatewayIntentBits } from 'discord.js'
+
 import * as conf from '../config.toml'
 import { io } from 'socket.io-client'
 
@@ -23,7 +25,8 @@ let state: State = {
 
     emotes: [],
 
-    webhook: conf.discord.webhook
+    webhook: conf.discord.webhook,
+    token: conf.discord.token
 }
 
 function commitSideEffect(effect: Effect) {
@@ -37,6 +40,22 @@ function commitSideEffect(effect: Effect) {
 }
 
 let modules: Module[] = [require('./webhookIntegration').module]
+
+/*
+* Initialize Discord bot
+*/
+
+const client = new Client({intents: [GatewayIntentBits.Guilds]})
+
+client.once(Events.ClientReady, (readyClient) => {
+    console.log('Discord bot logged in as ' + readyClient.user.tag)
+})
+
+client.login(state.token)
+
+/*
+* Initialize CyTube
+*/
 
 // https://github.com/Xaekai/PonkBot/blob/1f557b4214b25c344fa83964ae90666259eb371a/lib/client.js
 // https://github.com/Xaekai/PonkBot/blob/1f557b4214b25c344fa83964ae90666259eb371a/lib/ponkbot.js

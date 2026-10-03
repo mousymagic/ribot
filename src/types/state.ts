@@ -21,5 +21,6 @@ export type State = {
     emotes: cytube.EmotePayload[]
     
     // Discord auth
-    webhook?: string
+    webhook?: string,
+    token: string
 }

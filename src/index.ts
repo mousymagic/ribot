@@ -6,11 +6,11 @@
  * Entry point of the bot. All initialization and side effects are done here
  */
 
-import type { State } from './typeState'
-import type { Effect, Module } from './typesEffect'
-import type { EmotePayload, UserRank } from './cytubeTypes'
+import type { State } from './types/state'
+import type { Effect, Module } from './types/effects'
+import type { EmotePayload, UserRank } from './types/cytube'
 
-import { config } from './config'
+import { config } from '../config'
 import { io } from 'socket.io-client'
 
 let state: State = {

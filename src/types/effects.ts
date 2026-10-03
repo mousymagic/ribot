@@ -1,5 +1,5 @@
 /**
- * @file typesEffects.ts
+ * @file effects.ts
  * @author lauraestupida
  * @license MIT
  * 
@@ -9,8 +9,8 @@
  * make without actually doing them so that the responsibility is of the caller.
  */
 
-import * as cytube from './cytubeTypes'
-import { type State } from "./typeState"
+import * as cytube from './cytube'
+import { type State } from "./state"
 
 /**
  * Does nothing

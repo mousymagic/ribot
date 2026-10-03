@@ -1,12 +1,12 @@
 /**
- * @file typeState.ts
+ * @file state.ts
  * @author lauraestupida
  * @license MIT
  * 
  * The entire state of the bot
  */
 
-import * as cytube from './cytubeTypes'
+import * as cytube from './cytube'
 
 export type State = {
     // Cytube auth information

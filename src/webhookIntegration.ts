@@ -6,12 +6,12 @@
  * Module that sends chat messages and other events to a Discord webhook
  */
 
-import { type Module, type Effect, Nothing } from './typesEffect.ts'
-import type { State } from './typeState.ts'
+import { type Module, type Effect, Nothing } from './types/effects.ts'
+import type { State } from './types/state.ts'
 import type {
     ChatMsgPayload, AddUserPayload, EmotePayload,
     UserLeavePayload, ChangeMediaPayload
-} from './cytubeTypes.ts'
+} from './types/cytube.ts'
 
 import { parseDocument, ElementType } from 'htmlparser2'
 import { type ChildNode, Element } from 'domhandler'

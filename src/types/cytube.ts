@@ -1,3 +1,11 @@
+/**
+ * @file cytube.ts
+ * @author lauraestupida
+ * @license MIT
+ * 
+ * Types for CyTube events or data structures
+ */
+
 export type ChatMsgPayload = {
     username: string,
     msg: string,

@@ -10,20 +10,20 @@ import type { State } from './types/state'
 import type { Effect, Module } from './types/effects'
 import type { EmotePayload, UserRank } from './types/cytube'
 
-import { config } from '../config'
+import * as conf from '../config.toml'
 import { io } from 'socket.io-client'
 
 let state: State = {
-    host: config.host,
-    port: config.port, secure: config.secure,
-    username: config.username,
-    password: config.password,
-    channel: config.channel,
+    host: conf.cytube.host,
+    port: conf.cytube.port, secure: conf.cytube.secure,
+    username: conf.cytube.username,
+    password: conf.cytube.password,
+    channel: conf.cytube.channel,
     channelPassword: undefined,
 
     emotes: [],
 
-    webhook: config.webhook
+    webhook: conf.discord.webhook
 }
 
 function commitSideEffect(effect: Effect) {

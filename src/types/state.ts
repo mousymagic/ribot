@@ -8,9 +8,12 @@
 
 import * as cytube from './cytube'
 
+import { EventEmitter } from 'node:events'
 import { Socket } from 'socket.io-client'
 
 export type State = {
+    events: EventEmitter,
+
     // Cytube auth information
     host: string,
     port: string, secure: boolean,

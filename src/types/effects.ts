@@ -36,6 +36,21 @@ export type CytubeEventHandler<T> = (data: T, state: State) => Effect
  */
 export type Module = {
     /**
+     * Listens for events coming from the bot
+     */
+    events: {
+        /**
+         * Whenever the playlist is updated.
+         * @param add - uid of the item that got added
+         * @param remove - item that got removed
+         * @param move - item that got moved
+         */
+        playlistUpdate?:
+            (state: State, add?: number,
+             remove?: cytube.QueueItem, move?: number) => Effect
+    }
+
+    /**
      * Listens for events coming from the Cytube socket
      */
     cytubeEvents: {

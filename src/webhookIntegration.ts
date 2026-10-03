@@ -117,6 +117,7 @@ function onChangeMedia(data: ChangeMediaPayload, { webhook }: State) {
 }
 
 export const module: Module = {
+    events: {},
     cytubeEvents: {
         chatMsg: onChatMsg,
         addUser: onAddUser,

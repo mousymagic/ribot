@@ -8,7 +8,12 @@
 
 import type { State } from './types/state'
 import type { Effect, Module } from './types/effects'
-import type { EmotePayload, UserRank } from './types/cytube'
+import type {
+    EmotePayload, PlaylistPayload, QueuePayload, DeletePayload, UserRank,
+    SetTempPayload, MoveVideoPayload, SetCurrentPayload
+} from './types/cytube'
+
+import { EventEmitter } from 'node:events'
 
 import { Client, Events, GatewayIntentBits } from 'discord.js'
 
@@ -35,6 +40,8 @@ const text = {
 const socket = io(text.servers[0]?.url)
 
 let state: State = {
+    events: new EventEmitter(),
+
     host: conf.cytube.host,
     port: conf.cytube.port, secure: conf.cytube.secure,
     username: conf.cytube.username,
@@ -128,6 +135,11 @@ socket.once('login', (data) => {
                 commitSideEffect(module.cytubeEvents[event](data, state))
             })
         }
+        for(const event in module.events) {
+            state.events.on(event, (...args) => {
+                commitSideEffect(module.events[event](state, ...args))
+            })
+        }
     }
 })
 
@@ -143,6 +155,7 @@ function getVideo(state: State, id: number) {
 
 socket.on('playlist', (data: PlaylistPayload) => {
     state.playlist = data
+    state.events.emit('playlistUpdate')
     console.log('Playlist: ' + state.playlist.map(data => data.media.title))
 })
 
@@ -160,6 +173,8 @@ socket.on('queue', ({ item, after }: QueuePayload) => {
         state.playlist.splice(index, 0, item)
     }
 
+    state.events.emit('playlistUpdate', item.uid)
+
     console.log('Playlist: ' + state.playlist.map(data => data.media.title))
 })
 
@@ -171,7 +186,9 @@ socket.on('delete', ({ uid }: DeletePayload) => {
         return
     }
     
-    state.playlist.splice(index, 1)
+    const el = state.playlist.splice(index, 1).pop()
+
+    state.events.emit('playlistUpdate', undefined, el)
 
     console.log('Playlist: ' + state.playlist.map(data => data.media.title))
 })
@@ -188,6 +205,8 @@ socket.on('moveVideo', ({ from, after }: MoveVideoPayload) => {
 
     state.playlist.splice(index, 1)
     state.playlist.splice(newIndex != undefined ? newIndex + 1 : 0, 0, item)
+
+    state.events.emit('playlistUpdate', undefined, undefined, from)
 
     console.log('Playlist: ' + state.playlist.map(data => data.media.title))
 })

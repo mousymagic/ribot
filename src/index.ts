@@ -119,7 +119,12 @@ function commitSideEffect(effect: Effect) {
             })
             break
         case 'httpRequest':
-            fetch(effect.request)
+            const prom = fetch(effect.request)
+            const handler = effect.handle
+            if(handler != undefined) {
+                prom.then(response => response.text())
+                    .then(text => commitSideEffect(handler(text, state)))
+            }
             break
         case 'chatCytube':
             state.socket.emit('chatMsg', {
@@ -141,12 +146,21 @@ function commitSideEffect(effect: Effect) {
             state.currentTurn = effect.currentTurn ?? state.currentTurn
             state.waitingForTurn = effect.waitingForTurn ?? state.waitingForTurn
             break
+        case 'addYt':
+            state.socket.emit('queue', {
+                id: effect.id,
+                type: 'yt',
+                pos: effect.pos ?? 'end',
+                temp: effect.temp ?? true
+            })
+            break
     }
 }
 
 let modules: Module[] = [
     require('./webhookIntegration').module,
-    require('./queueTurnSystem').module
+    require('./queueTurnSystem').module,
+    require('./petitTube').module
 ]
 
 /*

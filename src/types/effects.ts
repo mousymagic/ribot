@@ -68,7 +68,8 @@ export type ManyEffect = {
 */
 export type HTTPEffect = {
     kind: 'httpRequest',
-    request: Request
+    request: Request,
+    handle?: (text: string, state: State) => Effect
 }
 
 /**
@@ -134,7 +135,17 @@ export type SetTurns = {
     waitingForTurn?: boolean
 }
 
+/**
+ * Adds a YouTube video to the queue
+ */
+export type AddYtVideo = {
+    kind: 'addYt',
+    id: string,
+    pos?: 'mext' | 'end',
+    temp?: boolean
+}
+
 export type Effect =
     NothingEffect | HTTPEffect | ManyEffect | ChatCytubeEffect |
     MoveMediaEffect | PauseEffect | SetTempEffect | JumpToItemEffect |
-    TurnSystemEffect | SetTurns
+    TurnSystemEffect | SetTurns | AddYtVideo

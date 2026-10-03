@@ -44,6 +44,8 @@ let state: State = {
 
     socket: socket,
     emotes: [],
+    playlist: [],
+    currentItem: 0,
 
     webhook: conf.discord.webhook,
     token: conf.discord.token
@@ -131,4 +133,76 @@ socket.once('login', (data) => {
 
 socket.on('disconnect', (reason) => {
     throw new Error(`Disconnected. ${reason}`)
+})
+
+// Playlist management
+
+function getVideo(state: State, id: number) {
+    return state.playlist.findIndex(({ uid }) => uid == id)
+}
+
+socket.on('playlist', (data: PlaylistPayload) => {
+    state.playlist = data
+    console.log('Playlist: ' + state.playlist.map(data => data.media.title))
+})
+
+socket.on('queue', ({ item, after }: QueuePayload) => {
+    if(state.playlist.length == 0 || after == 'prepend') {
+        state.playlist.splice(0, 0, item)
+    } else {
+        const index = getVideo(state, after)
+
+        if(index == -1) {
+            console.log('Received bogus queue payload!')
+            return
+        }
+
+        state.playlist.splice(index, 0, item)
+    }
+
+    console.log('Playlist: ' + state.playlist.map(data => data.media.title))
+})
+
+socket.on('delete', ({ uid }: DeletePayload) => {
+    const index = getVideo(state, uid)
+
+    if (index == -1) {
+        console.log('Received bogus delete payload!')
+        return
+    }
+    
+    state.playlist.splice(index, 1)
+
+    console.log('Playlist: ' + state.playlist.map(data => data.media.title))
+})
+
+socket.on('moveVideo', ({ from, after }: MoveVideoPayload) => {
+    const index = getVideo(state, from)
+    const item = index != -1 ? state.playlist[index] : undefined
+    const newIndex = after != 'prepend' ? getVideo(state, after) : undefined
+
+    if (item == undefined || newIndex == -1) {
+        console.log('Received bogus moveVideo payload!')
+        return
+    }
+
+    state.playlist.splice(index, 1)
+    state.playlist.splice(newIndex != undefined ? newIndex + 1 : 0, 0, item)
+
+    console.log('Playlist: ' + state.playlist.map(data => data.media.title))
+})
+
+socket.on('setCurrent', (uid: SetCurrentPayload) => {
+    state.currentItem = uid
+})
+
+socket.on('setTemp', ({ uid, temp }: SetTempPayload) => {
+    const index = getVideo(state, uid)
+
+    if (index == -1 || state.playlist[index] == undefined) {
+        console.log('Received bogus setTemp payload!')
+        return
+    }
+    
+    state.playlist[index].temp = temp
 })

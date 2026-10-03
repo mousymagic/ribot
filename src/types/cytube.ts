@@ -91,3 +91,12 @@ export type MoveVideoPayload = {
     from: number,
     after: number | 'prepend'
 }
+
+export type DeletePayload = { uid: number }
+
+export type SetCurrentPayload = number
+
+export type SetTempPayload = {
+    uid: number,
+    temp: boolean
+}

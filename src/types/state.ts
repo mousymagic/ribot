@@ -21,7 +21,9 @@ export type State = {
 
     // Cytube session
     socket: Socket,
-    emotes: cytube.EmotePayload[]
+    emotes: cytube.EmotePayload[],
+    playlist: cytube.QueueItem[],
+    currentItem: number,
     
     // Discord auth
     webhook?: string,

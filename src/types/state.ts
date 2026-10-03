@@ -31,8 +31,15 @@ export type State = {
     permissions?: cytube.Permissions,
     leader: string,
     playlistLocked: boolean,
+    mediaUpdateInterval?: NodeJS.Timeout,
     
     // Discord auth
     webhook?: string,
-    token: string
+    token: string,
+
+    // Bot session
+    turnSystemEnabled: boolean,
+    turns: string[],
+    currentTurn: number,
+    waitingForTurn: boolean,
 }

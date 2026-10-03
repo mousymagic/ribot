@@ -58,22 +58,96 @@ let state: State = {
     permissions: undefined,
     leader: '',
     playlistLocked: false,
+    mediaUpdateInterval: undefined,
 
     webhook: conf.discord.webhook,
-    token: conf.discord.token
+    token: conf.discord.token,
+
+    turnSystemEnabled: false,
+    turns: [],
+    currentTurn: 0,
+    waitingForTurn: false,
 }
 
 function commitSideEffect(effect: Effect) {
     switch(effect.kind) {
         case 'nothing':
             break
+        case 'many':
+            for(const e of effect.effects) {
+                commitSideEffect(e)
+            }
+            break
+        case 'moveMedia':
+            state.socket.emit('moveMedia', {
+                from: effect.from,
+                after: effect.after ?? 'prepend'
+            })
+            break
+        case 'pause':
+            if(!effect.pause) {
+                state.socket.emit('assignLeader', { name: '' })
+                state.mediaUpdateInterval?.close()
+                state.mediaUpdateInterval = undefined
+                return
+            }
+
+            state.mediaUpdateInterval = setInterval(() => {
+                if(state.leader != state.username)
+                    state.socket.emit('assignLeader', { name: state.username })
+
+                if(state.playlist.length == 0)
+                    return
+
+                const index = getVideo(state, state.currentItem)
+
+                state.socket.emit('mediaUpdate', {
+                    id: state.playlist[index]?.media.id,
+                    currentTime: 0,
+                    paused: true,
+                    type: 'yt'
+                })
+            }, 5000)
+            break
+        case 'jumpTo':
+            state.socket.emit('jumpTo', effect.uid)
+            break
+        case 'setTemp':
+            state.socket.emit('setTemp', {
+                uid: effect.uid,
+                temp: effect.temp
+            })
+            break
         case 'httpRequest':
             fetch(effect.request)
+            break
+        case 'chatCytube':
+            state.socket.emit('chatMsg', {
+                msg: effect.msg,
+                meta: effect.meta ?? {}
+            })
+            break
+        case 'turnSystem':
+            if(state.turnSystemEnabled != effect.enable) {
+                state.turnSystemEnabled = effect.enable
+                state.turns = []
+                state.currentTurn = 0
+                state.waitingForTurn = false
+                console.log('Set turn system to ' + effect.enable)
+            }
+            break
+        case 'setTurns':
+            state.turns = effect.turns ?? state.turns
+            state.currentTurn = effect.currentTurn ?? state.currentTurn
+            state.waitingForTurn = effect.waitingForTurn ?? state.waitingForTurn
             break
     }
 }
 
-let modules: Module[] = [require('./webhookIntegration').module]
+let modules: Module[] = [
+    require('./webhookIntegration').module,
+    require('./queueTurnSystem').module
+]
 
 /*
 * Initialize Discord bot

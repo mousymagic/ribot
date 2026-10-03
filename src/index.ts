@@ -57,6 +57,7 @@ let state: State = {
     rank: -1,
     permissions: undefined,
     leader: '',
+    playlistLocked: false,
 
     webhook: conf.discord.webhook,
     token: conf.discord.token
@@ -159,6 +160,10 @@ socket.on('setUserRank', ({ name, rank }: SetUserRankPayload) => {
 
 socket.on('setLeader', (leader: string) => {
     state.leader = leader
+})
+
+socket.on('setPlaylistLocked', (locked: boolean) => {
+    state.playlistLocked = locked
 })
 
 socket.on('disconnect', (reason) => {

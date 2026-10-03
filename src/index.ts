@@ -56,6 +56,7 @@ let state: State = {
     currentItem: 0,
     rank: -1,
     permissions: undefined,
+    leader: '',
 
     webhook: conf.discord.webhook,
     token: conf.discord.token
@@ -154,6 +155,10 @@ socket.on('setPermissions', (perms: Permissions) => {
 socket.on('setUserRank', ({ name, rank }: SetUserRankPayload) => {
     if(name == state.username)
         state.rank = rank
+})
+
+socket.on('setLeader', (leader: string) => {
+    state.leader = leader
 })
 
 socket.on('disconnect', (reason) => {

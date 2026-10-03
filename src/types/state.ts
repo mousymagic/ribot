@@ -29,6 +29,7 @@ export type State = {
     currentItem: number,
     rank: cytube.UserRank,
     permissions?: cytube.Permissions,
+    leader: string,
     
     // Discord auth
     webhook?: string,

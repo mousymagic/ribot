@@ -1,7 +1,17 @@
 {
+  "author": {
+    "name": "lauraestupida",
+    "url": "https://github.com/mousymagic"
+  },
   "name": "ribot",
-  "module": "index.ts",
-  "type": "module",
+  "description": "A bot for CyTube",
+  "repository": {
+    "url": "https://github.com/mousymagic/ribot"
+  },
+  "license": "MIT",
+  "scripts": {
+    "start": "bun ./src/index.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },

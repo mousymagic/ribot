@@ -3,149 +3,104 @@
  * @author lauraestupida
  * @license MIT
  * 
- * Provides a type for how modules should behave and an Effects type.
- * 
- * The effects type describes all the side effects a module or function wants to
- * make without actually doing them so that the responsibility is of the caller.
+ *  Defines a bunch of Effect types that describe a side effect that wants to be
+ * performed. These effects can be chained to form some sort of monad.
  */
 
-import * as cytube from './cytube'
-import { type State } from "./state"
-
-export type CytubeEventHandler<T> = (data: T, state: State) => Effect
+import type { SocketState } from "./state";
 
 /**
- * Describes a modular functionality of the bot. Most of the typings effort are
- * to make sure modules don't do any side effects of their own.
+ * Defines a new effect
  */
-export type Module = {
+type Define<Name extends string, Argument, ResponseType = null> =
+    { argument: Argument, kind: Name, response: ResponseType }
+
+export type Kind = Definitions['kind']
+type Definition<K extends Kind> = Extract<Definitions, { kind: K }>
+export type Argument<K extends Kind> = Definition<NoInfer<K>>['argument'];
+export type ResponseType<K extends Kind> = Definition<NoInfer<K>>['response'];
+
+/**
+ * A specific effect whose Kind can be inferred
+ */
+export type Effect<K extends Kind = Kind> = readonly [K, Argument<K>]
+
+/**
+ * Function that accepts the response of Effect K and returns Effect R
+ */
+export type Bind<K extends Kind = Exclude<Kind, 'end'>, R extends Kind = Kind> =
+    K extends 'end' ? never : (_: ResponseType<K>) => Effect<R | 'end'>
+
+export function bind(u: Effect): Effect<'chain'>;
+export function bind<A extends Kind>(u: Effect<A>, a: Bind<A>): Effect<'chain'>;
+export function bind<A extends Kind, B extends Kind>
+    (u: Effect<A>, a: Bind<A, B>, b: Bind<B>): Effect<'chain'>;
+export function bind<A extends Kind, B extends Kind, C extends Kind>
+    (u: Effect<A>, a: Bind<A, B>, b: Bind<B, C>, c: Bind<C>): Effect<'chain'>;
+export function bind<
+    A extends Kind, B extends Kind, C extends Kind, D extends Kind
+> (
+    u: Effect<A>, a: Bind<A, B>, b: Bind<B, C>, c: Bind<C, D>, d: Bind<D>
+): Effect<'chain'>;
+export function bind<
+    A extends Kind, B extends Kind, C extends Kind, D extends Kind,
+    E extends Kind
+> (
+    u: Effect<A>, a: Bind<A, B>, b: Bind<B, C>, c: Bind<C, D>, d: Bind<D, E>,
+    e: Bind<E>
+): Effect<'chain'>;
+export function bind<
+    A extends Kind, B extends Kind, C extends Kind, D extends Kind,
+    E extends Kind, F extends Kind
+> (
+    u: Effect<A>, a: Bind<A, B>, b: Bind<B, C>, c: Bind<C, D>, d: Bind<D, E>,
+    e: Bind<E, F>, f: Bind<F>
+): Effect<'chain'>;
+export function bind<
+    A extends Kind, B extends Kind, C extends Kind, D extends Kind,
+    E extends Kind, F extends Kind, G extends Kind
+> (
+    u: Effect<A>, a: Bind<A, B>, b: Bind<B, C>, c: Bind<C, D>, d: Bind<D, E>,
+    e: Bind<E, F>, f: Bind<F, G>, g: Bind<G>
+): Effect<'chain'>;
+export function bind<
+    A extends Kind, B extends Kind, C extends Kind, D extends Kind,
+    E extends Kind, F extends Kind, G extends Kind, H extends Kind
+> (
+    u: Effect<A>, a: Bind<A, B>, b: Bind<B, C>, c: Bind<C, D>, d: Bind<D, E>,
+    e: Bind<E, F>, f: Bind<F, G>, g: Bind<G, H>, h: Bind<H>
+): Effect<'chain'>;
+
+/**
+ * Chains multiple effects together
+ */
+export function bind(u: Effect, ...fns: ReadonlyArray<Bind>): Effect<'chain'> {
+    return ['chain', {unit: u, binds: fns}]
+}
+
+/**
+ * Ends a chain prematurely
+ */
+export function end(u: Effect | null = null): Effect<'end'> {
+    return ['end', {unit: u}]
+}
+
+/**
+ * ALL YOUR EFFECTS BELONG TO US
+ */
+type Definitions =
+  | Define<'chain', {unit: Effect, binds: ReadonlyArray<Bind>}>
     /**
-     * Listens for events coming from the bot
+     * Ends a chain of effects prematurely but first performs effect in unit
      */
-    events: {
-        /**
-         * Whenever the playlist is updated.
-         * @param add - uid of the item that got added
-         * @param remove - item that got removed
-         * @param move - item that got moved
-         */
-        playlistUpdate?:
-            (state: State, add?: number,
-             remove?: cytube.QueueItem, move?: number) => Effect
-    }
-
+  | Define<'end', {unit: Effect | null}>
+  | Define<'error', string>
+  | Define<'http', Request, Response>
+  | Define<'body', Response, string>
+  | Define<'log', string>
     /**
-     * Listens for events coming from the Cytube socket
+     * Channel related stuff
      */
-    cytubeEvents: {
-        chatMsg?: CytubeEventHandler<cytube.ChatMsgPayload>,
-        addUser?: CytubeEventHandler<cytube.AddUserPayload>,
-        userLeave?: CytubeEventHandler<cytube.UserLeavePayload>,
-        changeMedia?: CytubeEventHandler<cytube.ChangeMediaPayload>,
-        queue?: CytubeEventHandler<cytube.QueuePayload>,
-        setCurrent?: CytubeEventHandler<cytube.SetCurrentPayload>,
-        setLeader?: CytubeEventHandler<string>,
-        setPlaylistLocked?: CytubeEventHandler<boolean>
-    }
-}
-
-/**
- * Does nothing
- */
-export type NothingEffect = { kind: 'nothing' }
-export const Nothing: NothingEffect = { kind: 'nothing' }
-
-/**
- * Does many side effects
- */
-export type ManyEffect = {
-    kind: 'many',
-    effects: Effect[]
-}
-
-/**
- * Carries out an HTTP Request
-*/
-export type HTTPEffect = {
-    kind: 'httpRequest',
-    request: Request,
-    handle?: (text: string, state: State) => Effect
-}
-
-/**
- * Chats in CyTube
- */
-export type ChatCytubeEffect = {
-    kind: 'chatCytube',
-    msg: string,
-    meta?: object
-}
-
-/**
- * Moves an item on playlist CyTube
- * 
- * If after is left out then it moves it to the beginning of the playlist
- */
-export type MoveMediaEffect = {
-    kind: 'moveMedia',
-    from: number,
-    after?: number
-}
-
-/**
- * Forces bot to be leader to pause the video as long as pause is true
- */
-export type PauseEffect = {
-    kind: 'pause',
-    pause: boolean
-}
-
-/**
- * Sets an item on the playlist as temporary
- */
-export type SetTempEffect = {
-    kind: 'setTemp',
-    uid: number,
-    temp: boolean
-}
-
-/**
- * Sets current playing video to uid
- */
-export type JumpToItemEffect = {
-    kind: 'jumpTo',
-    uid: number
-}
-
-/**
- * Enables or disables the turn system
- */
-export type TurnSystemEffect = {
-    kind: 'turnSystem',
-    enable: boolean
-}
-
-/**
- * Sets the turn
- */
-export type SetTurns = {
-    kind: 'setTurns',
-    turns?: string[],
-    currentTurn?: number,
-    waitingForTurn?: boolean
-}
-
-/**
- * Adds a YouTube video to the queue
- */
-export type AddYtVideo = {
-    kind: 'addYt',
-    id: string,
-    pos?: 'mext' | 'end',
-    temp?: boolean
-}
-
-export type Effect =
-    NothingEffect | HTTPEffect | ManyEffect | ChatCytubeEffect |
-    MoveMediaEffect | PauseEffect | SetTempEffect | JumpToItemEffect |
-    TurnSystemEffect | SetTurns | AddYtVideo
+  | Define<'channelevent', { name: string, event: string, data: any }>
+  | Define<'socketstate', { name: string, next: Partial<SocketState> }>
+  | Define<'socketemit', { name: string, event: string, message: any }>

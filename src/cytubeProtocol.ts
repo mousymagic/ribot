@@ -1,0 +1,85 @@
+/**
+ * @file cytubeProtocol.ts
+ * @author lauraestupida
+ * @license MIT
+ * 
+ *  Handles incoming events from a CyTube socket and handles them accordingly to
+ * the protocol. This module performs no side effects by its own.
+ */
+
+import type { Socket } from "socket.io-client";
+import type { SocketState } from "./types/state";
+import { bind, end, type Effect, type Kind } from "./types/effects";
+import type { CytubeEvents } from "./types/cytube";
+
+export function socketState(
+    socket: Socket, name: string, username: string, password: string
+): SocketState {
+    return {
+        name,
+        leader: null,
+        username,
+        password,
+        rank: -1,
+        emotes: [],
+        users: [],
+        drinks: 0,
+        
+        user(name: string) {
+            return this.users.find(user => user.name == name)
+        },
+
+        socket,
+        status: 'unconnected',
+        started: new Date(),
+
+        newState: next => ['socketstate', { name, next }],
+        send: (event, message) => ['socketemit', { name, event, message }],
+        emit: (event, data) => ['channelevent', { name, event, data }],
+
+        updateUser(name, next) {
+            const index = this.users.findIndex(user => user.name == name)
+            const user = index != -1 ? this.users[index] : undefined
+            if(user === undefined)
+                return null
+            const users = this.users.with(index, {...user, ...next})
+            return this.newState({users})
+        },
+    }
+}
+
+/**
+ * How to handle every event coming from the CyTube socket
+ */
+export const eventHandler:
+    {[event in keyof CytubeEvents]: 
+        (payload: CytubeEvents[event], state: SocketState) => Effect<Kind>} =
+{
+    connect: (_, { status, newState, name, username, password, send }) => bind(
+        status != 'unconnected' ? end() : ['log', 'Connecting...'],
+        _ => newState({status: 'connected'}),
+        _ => send('joinChannel', { name }),
+        _ => send('login', { name: username, pw: password })
+    ),
+    login: ({ success }, { newState, username }) => bind(
+        success ? newState({status: 'logged'})
+                : end(['error', `Couldn't login as ${username}`]),
+        _ => ['log', `Logged in as ${username}`]
+    ),
+    
+    userlist: (users, { newState }) => newState({users}),
+    addUser: (user, { newState, users }) => newState({users: [...users, user]}),
+    userLeave: ({ name }, { newState, users }) =>
+        newState({users: users.filter(user => user.name != name)}),
+    
+    chatMsg(msg, state) {
+        if(msg.time < state.started.getTime())
+            return end()
+        
+        return state.emit('chatMsg', msg)
+    },
+
+    emoteList: (emotes, { newState }) => newState({emotes}),
+
+    drinkCount: (drinks, { newState }) => newState({drinks}),
+}

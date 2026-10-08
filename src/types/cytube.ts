@@ -3,114 +3,98 @@
  * @author lauraestupida
  * @license MIT
  * 
- * Types for CyTube events or data structures
+ * Useful types for dealing with CyTube events
  */
 
-export type ChatMsgPayload = {
+export const Permissions = [
+    'seeplaylist', 'playlistadd', 'playlistnext', 'playlistmove',
+    'playlistdelete', 'playlistjump', 'playlistaddlist', 'oplaylistadd',
+    'oplaylistnext', 'oplaylistmove', 'oplaylistdelete', 'oplaylistjump',
+    'oplaylistaddlist', 'playlistaddcustom', 'playlistaddrawfile',
+    'playlistaddlive', 'exceedmaxlength', 'addnontemp', 'settemp',
+    'playlistshuffle', 'playlistclear', 'pollctl', 'pollvote', 'viewhiddenpoll',
+    'voteskip', 'viewvoteskip', 'mute', 'kick', 'ban', 'motdedit', 'filteredit',
+    'filterimport', 'emoteedit', 'emoteimport', 'playlistlock', 'leaderctl',
+    'drink', 'chat', 'chatclear', 'exceedmaxitems', 'deletefromchannellib',
+    'exceedmaxdurationperuser',
+] as const
+
+export type Permission = typeof Permissions[number]
+
+export type User = Readonly<{
+    name: string;
+    rank: number;
+    profile: Readonly<{ image: string, text: string }>;
+    meta: Readonly<{
+        afk: boolean,
+        muted: boolean,
+        smuted?: boolean,
+        aliases?: string[],
+        ip?: string
+    }>
+}>
+
+export type Emote = Readonly<{
+    name: string;
+    image: string;
+    source: string;
+}>
+
+export type Channel = Readonly<{
+    name: string;
+    /**
+     * Username of the account that is logged into this channel
+     */
+    username: string;
+    /**
+     * Password of the account that is logged into this channel
+     */
+    password: string;
+    leader: string | null;
+    rank: number;
+    emotes: Emote[];
+    users: User[];
+    drinks: number,
+
+    user(name: string): User | undefined,
+}>
+
+type MessageClass = 'server-whisper' | 'shout' | 'drink' | 'action' | 'spoiler'
+
+export type MessagePayload = Readonly<{
     username: string,
     msg: string,
     time: number,
-    meta: any
-}
-
-export type EmotePayload = {
-    name: string,
-    image: string,
-    source: string
-}
-
-export type Permission =
-    'seeplaylist' | 'playlistadd' | 'playlistnext' | 'playlistmove' |
-    'playlistdelete' | 'playlistjump' | 'playlistaddlist' | 'oplaylistadd' |
-    'oplaylistnext' | 'oplaylistmove' | 'oplaylistdelete' | 'oplaylistjump' |
-    'oplaylistaddlist' | 'playlistaddcustom' | 'playlistaddrawfile' |
-    'playlistaddlive' | 'exceedmaxlength' | 'addnontemp' | 'settemp' |
-    'playlistshuffle' | 'playlistclear' | 'pollctl' | 'pollvote' |
-    'viewhiddenpoll' | 'voteskip' | 'viewvoteskip' | 'mute' | 'kick' | 'ban' |
-    'motdedit' | 'filteredit' | 'filterimport' | 'emoteedit' | 'emoteimport' |
-    'playlistlock' | 'leaderctl' | 'drink' | 'chat' | 'chatclear' |
-    'exceedmaxitems' | 'deletefromchannellib' | 'exceedmaxdurationperuser'
-
-export type UserRank = -1 | 1 | 1.5 | 2 | 3 | 4 | 5
-
-export type Permissions = {[perm in Permission]: UserRank}
-
-export type AddUserPayload = {
-    name: string,
-    rank: UserRank,
-    profile: object,
-    meta: object
-}
-
-export type UserLeavePayload = { name: string }
-
-export type SetUserRankPayload = {
-    name: string,
-    rank: UserRank
-}
-
-export type UserCountPayload = number
-
-export type ChangeMediaPayload = {
-    id: string,
-    title: string,
-    seconds: number,
-    duration: string,
-    type: 'yt',
-    meta: object,
-    currentTime: number,
-    paused: boolean
-}
-
-export type MediaUpdatePayload = {
-    currentTime: number,
-    paused: boolean
-}
-
-export type SetAFKPayload = {
-    name: string,
-    afk: boolean
-}
-
-export type SetLeaderPayload = string
-
-export type SetPlaylistMeta = {
-    count: number,
-    rowTime: number,
-    time: string
-}
-
-export type QueueItem = {
-    media: {
-        id: string,
-        title: string,
-        seconds: number,
-        duration: string,
-        type: 'yt',
-        meta: object,
+    meta: {
+        addClass?: MessageClass,
+        addClassToNameAndTimestamp?: boolean,
+        forceShowName?: true,
+        action?: boolean
     }
-    uid: number,
-    temp: boolean,
-    queueby: string
+}>
+
+/**
+ * Every event that the CyTube socket sends alongside its data type
+ */
+export type CytubeEvents = {
+    connect: null,
+    login: { success: boolean, name: string },
+    emoteList: Emote[],
+    userlist: User[],
+    addUser: User,
+    userLeave: Pick<User, 'name'>,
+    setUserRank: Pick<User, 'name' | 'rank'>,
+    drinkCount: number,
+    setUserMeta: Pick<User, 'name' | 'meta'>,
+    setAFK: { name: string, afk: boolean }
+    chatMsg: MessagePayload,
 }
 
-export type PlaylistPayload = QueueItem[]
-
-export type QueuePayload = {
-    item: QueueItem,
-    after: number | 'prepend'
-}
-
-export type MoveVideoPayload = {
-    from: number,
-    after: number | 'prepend'
-}
-
-export type DeletePayload = { uid: number }
-
-export type SetCurrentPayload = number
-
-export type SetTempPayload = {
-    uid: number,
-    temp: boolean
+/**
+ * Every event we can send to CyTube alongside its data type
+ */
+export type CytubeOutgoing = {
+    joinChannel: { name: string },
+    login: { name: string, pw: string },
+    chatMsg: Pick<MessagePayload, 'msg' | 'meta'>
 }

@@ -3,43 +3,54 @@
  * @author lauraestupida
  * @license MIT
  * 
- * The entire state of the bot
+ * The bot internal state that shouldn't be modified
  */
 
-import * as cytube from './cytube'
+import type { Socket } from "socket.io-client"
+import type { Effect } from "./effects"
+import type { Channel, CytubeOutgoing, MessagePayload, User } from "./cytube"
+import type { EventEmitter } from 'node:events'
+import type { Module } from "./module"
 
-import { EventEmitter } from 'node:events'
-import { Socket } from 'socket.io-client'
+export interface State {}
 
-export type State = {
-    events: EventEmitter,
+/**
+ * Events a CyTube instance might emit to the modules
+ */
+export type ChannelEvents = {
+    chatMsg: MessagePayload
+}
 
-    // Cytube auth information
-    host: string,
-    port: string, secure: boolean,
-    username: string,
-    password: string,
-    channel: string,
-    channelPassword?: string,
+/**
+ * The state each CyTube instance manages
+ */
 
-    // Cytube session
-    socket: Socket,
-    emotes: cytube.EmotePayload[],
-    playlist: cytube.QueueItem[],
-    currentItem: number,
-    rank: cytube.UserRank,
-    permissions?: cytube.Permissions,
-    leader: string,
-    playlistLocked: boolean,
-    mediaUpdateInterval?: NodeJS.Timeout,
+export type SocketState = Channel & {
+    readonly socket: Socket,
+    status: 'unconnected' | 'connected' | 'logged',
+    started: Date,
+
+    newState(next: Partial<SocketState>): Effect<'socketstate'>
+    emit<E extends keyof ChannelEvents>(event: E, data: ChannelEvents[E]):
+        Effect<'channelevent'>
+
+    /**
+     * Sends an event to the socket
+     */
+    send<E extends keyof CytubeOutgoing>(event: E, payload: CytubeOutgoing[E]):
+        Effect<'socketemit'>
     
-    // Discord auth
-    webhook?: string,
-    token: string,
+    updateUser(name: string, userinfo: Partial<User>):
+        Effect<'socketstate'> | null
+}
 
-    // Bot session
-    turnSystemEnabled: boolean,
-    turns: string[],
-    currentTurn: number,
-    waitingForTurn: boolean,
+/**
+ * State of the entire bot
+ */
+export type BotState = State & {
+    /**
+     * Each connection to a channel needs its own socket
+     */
+    channels: {[name: string]: SocketState},
+    emitter: EventEmitter
 }

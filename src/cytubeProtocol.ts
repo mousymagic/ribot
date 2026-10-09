@@ -10,7 +10,7 @@
 import type { Socket } from "socket.io-client";
 import type { SocketState } from "./types/state";
 import { bind, end, type Effect, type Kind } from "./types/effects";
-import type { CytubeEvents } from "./types/cytube";
+import type { CytubeEvents, PlaylistItem } from "./types/cytube";
 
 export function socketState(
     socket: Socket, name: string, username: string, password: string
@@ -22,11 +22,15 @@ export function socketState(
         password,
         rank: -1,
         emotes: [],
+        playlist: [],
         users: [],
         drinks: 0,
         
         user(name: string) {
             return this.users.find(user => user.name == name)
+        },
+        media(uid: number) {
+            return this.playlist.find(item => item.uid == uid)
         },
 
         socket,
@@ -71,6 +75,33 @@ export const eventHandler:
     addUser: (user, { newState, users }) => newState({users: [...users, user]}),
     userLeave: ({ name }, { newState, users }) =>
         newState({users: users.filter(user => user.name != name)}),
+
+    playlist: (playlist, { newState }) => newState({playlist}),
+    queue: ({ item, after }, { playlist: oldpl, newState }) => {
+        const playlist: PlaylistItem[] =
+            oldpl.length == 0 ? [item]
+            : after == 'prepend' ? [item, ...oldpl]
+            : after == 'append' ? [...oldpl, item]
+            : oldpl.flatMap(i => i.uid == after ? [i, item] : [i])
+
+        return newState({playlist})
+    },
+    moveVideo: ({ from, after }, state) => {
+        const item = state.media(from)
+        if(item === undefined)
+            return end(['error', `Item with uid ${from} doesn't exist`])
+
+        const withoutItem = state.playlist.filter(i => i != item)
+
+        const playlist: PlaylistItem[] =
+            after == 'prepend' ? [item, ...withoutItem]
+            : after == 'append' ? [...withoutItem, item]
+            : withoutItem.flatMap(i => i.uid == after ? [i, item] : [i])
+
+        return state.newState({playlist})
+    },
+    delete: ({ uid }, { playlist, newState }) =>
+        newState({playlist: playlist.filter(item => item.uid != uid)}),
     
     chatMsg(msg, state) {
         if(msg.time < state.started.getTime())

@@ -55,8 +55,10 @@ export type Channel = Readonly<{
     emotes: Emote[];
     users: User[];
     drinks: number,
+    playlist: PlaylistItem[],
 
     user(name: string): User | undefined,
+    media(uid: PlaylistItem['uid']): PlaylistItem | undefined,
 }>
 
 type MessageClass = 'server-whisper' | 'shout' | 'drink' | 'action' | 'spoiler'
@@ -71,6 +73,42 @@ export type MessagePayload = Readonly<{
         forceShowName?: true,
         action?: boolean
     }
+}>
+
+export type MediaProvider =
+  | 'yt' // yifftube
+  | 'vi' // vimeo
+  | 'dm' // dailymotion
+  | 'sc' // soundcloud
+  | 'li' // livestream.com
+  | 'tw' // twitch
+  | 'tv' // twitch vod
+  | 'tc' // twitch clip
+  | 'rt' // rtmp stream
+  | 'hl' // hls stream
+  | 'cu' // custom embed
+  | 'gd' // google drive
+  | 'fi' // ffmpeg
+  | 'sb' // streamable
+  | 'pt' // peertube
+  | 'cm' // custom media
+  | 'bc' // bitchute
+  | 'od' // odysee
+  | 'bn' // bandcamp
+  | 'nv' // niconico
+
+export type PlaylistItem = Readonly<{
+    media: {
+        id: string,
+        title: string,
+        seconds: number,
+        duration: string,
+        type: MediaProvider,
+        meta: { /* TODO: stop gooning */ },
+    }
+    uid: number,
+    temp: boolean,
+    queueby: string
 }>
 
 /**
@@ -88,6 +126,16 @@ export type CytubeEvents = {
     setUserMeta: Pick<User, 'name' | 'meta'>,
     setAFK: { name: string, afk: boolean }
     chatMsg: MessagePayload,
+    playlist: PlaylistItem[],
+    moveVideo: {
+        from: PlaylistItem['uid'],
+        after: PlaylistItem['uid'] | 'prepend' | 'append'
+    },
+    queue: {
+        item: PlaylistItem,
+        after: PlaylistItem['uid'] | 'prepend' | 'append'
+    },
+    delete: Pick<PlaylistItem, 'uid'>,
 }
 
 /**

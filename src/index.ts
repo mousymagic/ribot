@@ -64,7 +64,8 @@ ${channelname} (doesn't exist)`);
         if(channel == undefined)
             throw new Error(`Cant edit ${channelname}'s state (doesnt exist)`)
         console.log(`[State]: ${JSON.stringify(next, null, 4)}`)
-        state.channels[channelname] = {...channel, ...next}
+
+        Object.assign(channel, next)
     },
     channelevent: ({ name, event, data }) => {
         const channel = state.channels[name]
@@ -103,7 +104,7 @@ for(const [name, info] of Object.entries(config.channels)) {
 
     for(const [event, handler] of Object.entries(eventHandler)) {
         ss.socket.on(event, (arg: Parameters<typeof handler>[0]) => {
-            const effect = handler(arg, ss)
+            const effect = handler(arg, state.channels[name])
             commit(effect, state)
         })
     }

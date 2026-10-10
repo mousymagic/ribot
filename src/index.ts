@@ -113,15 +113,7 @@ for(const [name, info] of Object.entries(config.channels)) {
 }
 
 // Initialize modules
-const modules: Module[] = [
-    {
-        channelEvents: {
-            chatMsg(data, channel, state) {
-                return ['log', `THE FAGGOT OF ${data.username} SAID ${data.msg}`]
-            },
-        }
-    }
-]
+const modules: Module[] = [require('./modules/discordBridge')]
 
 for(const { channelEvents } of modules) {
     if(channelEvents == undefined)

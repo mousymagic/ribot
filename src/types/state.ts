@@ -29,6 +29,7 @@ export type SocketState = Channel & {
     readonly socket: Socket,
     status: 'unconnected' | 'connected' | 'logged',
     started: Date,
+    currentItem: number,
 
     newState(next: Partial<SocketState>): Effect<'socketstate'>
     emit<E extends keyof ChannelEvents>(event: E, data: ChannelEvents[E]):

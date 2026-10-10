@@ -60,7 +60,7 @@ export type Channel = Readonly<{
 
     user(name: string): User | undefined,
     media(uid: PlaylistItem['uid']): PlaylistItem | undefined,
-    get currentMedia(): PlaylistItem | undefined
+    currentMedia(): PlaylistItem | undefined
 }>
 
 type MessageClass = 'server-whisper' | 'shout' | 'drink' | 'action' | 'spoiler'

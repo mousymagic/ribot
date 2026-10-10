@@ -34,7 +34,9 @@ export function socketState(
         media(uid: number) {
             return this.playlist.find(item => item.uid == uid)
         },
-        get currentMedia() { return this.media(this.currentItem) },
+        currentMedia() {
+            return this.media(this.currentItem)
+        },
 
         socket,
         status: 'unconnected',

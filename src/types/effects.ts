@@ -102,5 +102,6 @@ type Definitions =
      * Channel related stuff
      */
   | Define<'channelevent', { name: string, event: string, data: any }>
-  | Define<'socketstate', { name: string, next: Partial<SocketState> }>
+  | Define<
+      'socketstate', { name: string, next: Partial<SocketState> }, SocketState>
   | Define<'socketemit', { name: string, event: string, message: any }>

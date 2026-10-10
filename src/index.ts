@@ -59,13 +59,14 @@ ${channelname} (doesn't exist)`);
         console.log(`${channelname} => [${event}]: ${JSON.stringify(message, null, 4)}`)
         channel.socket.emit(event, message)
     },
-    socketstate: ({ name: channelname, next }, state) => {
+    socketstate: async ({ name: channelname, next }, state) => {
         const channel = state.channels[channelname]
         if(channel == undefined)
             throw new Error(`Cant edit ${channelname}'s state (doesnt exist)`)
         console.log(`[State]: ${JSON.stringify(next, null, 4)}`)
 
         state.channels[channelname] = {...channel, ...next}
+        return state.channels[channelname]
     },
     channelevent: ({ name, event, data }) => {
         const channel = state.channels[name]

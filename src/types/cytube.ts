@@ -59,6 +59,7 @@ export type Channel = Readonly<{
 
     user(name: string): User | undefined,
     media(uid: PlaylistItem['uid']): PlaylistItem | undefined,
+    get currentMedia(): PlaylistItem | undefined
 }>
 
 type MessageClass = 'server-whisper' | 'shout' | 'drink' | 'action' | 'spoiler'
@@ -136,6 +137,7 @@ export type CytubeEvents = {
         after: PlaylistItem['uid'] | 'prepend' | 'append'
     },
     delete: Pick<PlaylistItem, 'uid'>,
+    setCurrent: PlaylistItem['uid'],
 }
 
 /**

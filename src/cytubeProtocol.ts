@@ -25,6 +25,7 @@ export function socketState(
         playlist: [],
         users: [],
         drinks: 0,
+        currentItem: -1,
         
         user(name: string) {
             return this.users.find(user => user.name == name)
@@ -32,6 +33,7 @@ export function socketState(
         media(uid: number) {
             return this.playlist.find(item => item.uid == uid)
         },
+        get currentMedia() { return this.media(this.currentItem) },
 
         socket,
         status: 'unconnected',
@@ -102,6 +104,7 @@ export const eventHandler:
     },
     delete: ({ uid }, { playlist, newState }) =>
         newState({playlist: playlist.filter(item => item.uid != uid)}),
+    setCurrent: (currentItem, { newState }) => newState({currentItem}),
     
     chatMsg(msg, state) {
         if(msg.time < state.started.getTime())

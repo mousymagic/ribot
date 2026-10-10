@@ -195,6 +195,7 @@ export type CytubeEvents = {
     },
     delete: Pick<PlaylistItem, 'uid'>,
     setCurrent: PlaylistItem['uid'],
+    setLeader: User['name'],
 }
 
 /**

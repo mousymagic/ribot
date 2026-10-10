@@ -85,6 +85,17 @@ export const eventHandler:
         state.newState({users: state.users.filter(user => user.name != name)}),
         _ => state.emit('userLeft', state.user(name) as User)
     ),
+    setUserMeta: ({ name, meta }, { newState, users }) =>
+        newState({users: users.map(u => u.name == name ? {...u, meta} : u)}),
+    setUserRank: ({ name, rank }, { newState, users }) =>
+        newState({users: users.map(u => u.name == name ? {...u, rank} : u)}),
+    setAFK: ({ name, afk }, { newState, users }) =>
+        newState({
+            users: users.map(u =>
+                u.name == name ? {...u, meta: {...u.meta, afk}} : u)
+            }),
+    setLeader: (name, { newState }) =>
+        newState({leader: name == '' ? null : name}),
 
     playlist: (playlist, { newState }) => newState({playlist}),
     queue: ({ item, after }, { playlist: oldpl, newState }) => {

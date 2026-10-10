@@ -65,7 +65,7 @@ ${channelname} (doesn't exist)`);
             throw new Error(`Cant edit ${channelname}'s state (doesnt exist)`)
         console.log(`[State]: ${JSON.stringify(next, null, 4)}`)
 
-        Object.assign(channel, next)
+        state.channels[channelname] = {...channel, ...next}
     },
     channelevent: ({ name, event, data }) => {
         const channel = state.channels[name]

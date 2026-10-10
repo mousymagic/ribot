@@ -13,7 +13,7 @@ import { bind, end, type Effect, type Kind } from "./types/effects";
 import type { CytubeEvents, PlaylistItem } from "./types/cytube";
 
 export function socketState(
-    socket: Socket, name: string, username: string, password: string
+    socket: Socket, name: string, username: string, password: string, wb: string
 ): SocketState {
     return {
         name,
@@ -26,6 +26,7 @@ export function socketState(
         users: [],
         drinks: 0,
         currentItem: -1,
+        webhook: wb,
         
         user(name: string) {
             return this.users.find(user => user.name == name)

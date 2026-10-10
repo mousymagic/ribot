@@ -11,10 +11,10 @@ type Config = {
         port?: string,
         secure?: boolean
         username: string,
-        password: string
+        password: string,
+        webhook: string
     }},
     discord: {
-        webhook: string,
         token: string
     }
 }
@@ -99,7 +99,8 @@ for(const [name, info] of Object.entries(config.channels)) {
         io('https://bigapple.cytu.be:8443'),
         name,
         info.username,
-        info.password
+        info.password,
+        info.webhook
     )
     state.channels[name] = ss
 

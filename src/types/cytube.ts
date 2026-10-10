@@ -56,6 +56,7 @@ export type Channel = Readonly<{
     users: User[];
     drinks: number,
     playlist: PlaylistItem[],
+    webhook: string,
 
     user(name: string): User | undefined,
     media(uid: PlaylistItem['uid']): PlaylistItem | undefined,

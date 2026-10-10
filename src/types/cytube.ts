@@ -6,6 +6,8 @@
  * Useful types for dealing with CyTube events
  */
 
+import type { Effect } from "./effects";
+
 export const Permissions = [
     'seeplaylist', 'playlistadd', 'playlistnext', 'playlistmove',
     'playlistdelete', 'playlistjump', 'playlistaddlist', 'oplaylistadd',
@@ -61,6 +63,7 @@ export type Channel = Readonly<{
     user(name: string): User | undefined,
     media(uid: PlaylistItem['uid']): PlaylistItem | undefined,
     currentMedia(): PlaylistItem | undefined
+    sendMessage(msg: string): Effect<'socketemit'>
 }>
 
 type MessageClass = 'server-whisper' | 'shout' | 'drink' | 'action' | 'spoiler'

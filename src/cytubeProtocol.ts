@@ -37,6 +37,9 @@ export function socketState(
         currentMedia() {
             return this.media(this.currentItem)
         },
+        sendMessage(msg) {
+            return this.send('chatMsg', {msg, meta: {}})
+        },
 
         socket,
         status: 'unconnected',

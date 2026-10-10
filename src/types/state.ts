@@ -11,8 +11,11 @@ import type { Effect } from "./effects"
 import type { Channel, CytubeOutgoing, MessagePayload, PlaylistItem, User } from "./cytube"
 import type { EventEmitter } from 'node:events'
 import type { Module } from "./module"
+import type { Client } from "discord.js"
 
-export interface State {}
+export interface State {
+    channels: {[name: string]: Channel}
+}
 
 /**
  * Events a CyTube instance might emit to the modules
@@ -56,5 +59,6 @@ export type BotState = State & {
      * Each connection to a channel needs its own socket
      */
     channels: {[name: string]: SocketState},
-    emitter: EventEmitter
+    emitter: EventEmitter,
+    dc: Client
 }

@@ -88,9 +88,19 @@ async function commit(
 /**
  * From now on what remains is the actual initialization of the bot
  */
+
+const dc = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent
+    ]
+})
+
 const state: BotState = {
     emitter: new EventEmitter(),
-    channels: {}
+    channels: {},
+    dc,
 }
 
 // Log into CyTube channels
@@ -115,14 +125,24 @@ for(const [name, info] of Object.entries(config.channels)) {
 // Initialize modules
 const modules: Module[] = [require('./modules/discordBridge')]
 
-for(const { channelEvents } of modules) {
-    if(channelEvents == undefined)
-        continue
-    
-    for(const [event, handler] of Object.entries(channelEvents)) {
+for(const { channelEvents, discordEvents } of modules) {
+    for(const [event, handler] of Object.entries(channelEvents ?? {})) {
         state.emitter.on(event, (...args: Parameters<typeof handler>) => {
             const effect = handler(...args)
             commit(effect, state)
         })
     }
+
+    for(const [event, handler] of Object.entries(discordEvents ?? {})) {
+        console.log(event)
+        dc.on(event, (...args) => {
+            const effect = handler(state, ...args)
+            commit(effect, state)
+        })
+    }
 }
+
+// Log in to Discord!
+dc.once(Events.ClientReady, ({user}) => console.log(`Logged into ${user.tag}`))
+
+dc.login(config.discord.token)

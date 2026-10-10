@@ -7,11 +7,12 @@
  */
 
 import { end, type Effect } from "../types/effects";
-import type { ChannelHandlers } from "../types/module";
+import type { ChannelHandlers, DiscordHandlers } from "../types/module";
 
 import { parseDocument, ElementType } from 'htmlparser2'
 import { type ChildNode, Element } from 'domhandler'
-import { getMediaUrl, type Emote } from "../types/cytube";
+import { getMediaUrl, type Channel, type Emote, type MessagePayload } from "../types/cytube";
+import type { Message } from "discord.js";
 
 function msgToMarkdown(msg: string, emotes: Emote[]): string {
     function parseList(list: ChildNode[]): string {
@@ -76,6 +77,16 @@ function postToWebhook(url: string, body: WebhookBody): Effect<'http'> {
     })]
 }
 
+function forwardDiscordToCytube(msg: Message, state: Channel) {
+    return state.sendMessage(`[DC] ${msg.author.globalName}: ${msg.content}`)
+}
+function isCytubeMessageForwarded(msg: MessagePayload, state: Channel) {
+    return msg.username == state.username && msg.msg.startsWith('[DC] ')
+}
+function isDiscordMessageForwarded(msg: Message) {
+    return msg.webhookId != null
+}
+
 export const channelEvents: ChannelHandlers = {
     userJoined({ name, profile: { image } }, { webhook, username }) {
         if(name == username)
@@ -100,8 +111,9 @@ export const channelEvents: ChannelHandlers = {
             }]
         })
     },
-    chatMsg({ msg, username, meta }, channel) {
-        if(username == '[server]')
+    chatMsg(message, channel) {
+        const { msg, username, meta } = message
+        if(username == '[server]' || isCytubeMessageForwarded(message, channel))
             return end()
 
         const user = channel.user(username)
@@ -126,5 +138,17 @@ export const channelEvents: ChannelHandlers = {
             + `-# Added by ${item.queueby}`
         console.log(`SENDING ${content}`)
         return postToWebhook(webhook, {content})
+    },
+}
+
+export const discordEvents: DiscordHandlers = {
+    messageCreate(state, message) {
+        console.log('message create')
+        if(isDiscordMessageForwarded(message))
+            return end()
+
+        const chan = state.channels.perdonporexistir
+        if(chan == undefined) return end()
+        return forwardDiscordToCytube(message, chan)
     },
 }

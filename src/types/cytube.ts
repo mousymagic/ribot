@@ -89,7 +89,7 @@ export type MediaProvider =
   | 'rt' // rtmp stream
   | 'hl' // hls stream
   | 'cu' // custom embed
-  | 'gd' // google drive
+  | 'gd' // google docs
   | 'fi' // ffmpeg
   | 'sb' // streamable
   | 'pt' // peertube
@@ -106,12 +106,68 @@ export type PlaylistItem = Readonly<{
         seconds: number,
         duration: string,
         type: MediaProvider,
-        meta: { /* TODO: stop gooning */ },
+        meta: {
+            embed?: {
+                src?: string,
+                onlyLong?: boolean,
+                domain?: string,
+                uuid?: string,
+                short?: string,
+            }
+        },
     }
     uid: number,
     temp: boolean,
     queueby: string
 }>
+
+
+// https://github.com/calzoneman/sync/blob/3.0/www/js/util.js#L25
+export function getMediaUrl({ media }: PlaylistItem): string {
+    const {type, id, meta: { embed }} = media
+
+    function livestreamcom() {
+        const [account, event] = id.split(';')
+        return `https://livestream.com/accounts/${account}/events/${event}`
+    }
+    function peertube() {
+        return embed === undefined ? '#'
+             : embed.onlyLong === undefined ? '#'
+             : embed.domain === undefined ? '#'
+             : !embed.onlyLong && embed.short === undefined ? '#'
+             : !embed.onlyLong ? `https://${embed.domain}/w/${embed.short}`
+             : embed.uuid === undefined ? '#'
+             : `https://${embed.domain}/videos/watch/${embed.uuid}`
+    }
+    function bandcamp() {
+        const [artist, track] = id.split(';')
+        return `https://${artist}.bandcamp.com/track/${track}`
+    }
+    function odysee() {
+        const [user, video] = id.split(';');
+        return `https://odysee.com/@${user}/${video}`;
+    }
+
+    return type == 'yt' ? `https://www.youtube.com/watch?v=${id}`
+         : type == 'vi' ? `https://vimeo.com/${id}`
+         : type == 'dm' ? `https://dailymotion.com/video/${id}`
+         : type == 'sc' ? id
+         : type == 'li' ? livestreamcom()
+         : type == 'tw' ? `https://twitch.tv/${id}`
+         : type == 'rt' ? id
+         : type == 'gd' ? `https://docs.google.com/file/d/${id}`
+         : type == 'fi' ? id
+         : type == 'hl' ? id
+         : type == 'sb' ? `https://streamable.com/${id}`
+         : type == 'tc' ? `https://clips.twitch.tv/${id}`
+         : type == 'cm' ? id
+         : type == 'cu' ? (embed?.src ?? '#')
+         : type == 'pt' ? peertube()
+         : type == 'bc' ? `https://www.bitchute.com/video/${id}`
+         : type == 'bn' ? bandcamp()
+         : type == 'od' ? odysee()
+         : `https://www.nicovideo.jp/watch/${id}`
+}
 
 /**
  * Every event that the CyTube socket sends alongside its data type

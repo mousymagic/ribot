@@ -8,7 +8,7 @@
 
 import type { Socket } from "socket.io-client"
 import type { Effect } from "./effects"
-import type { Channel, CytubeOutgoing, MessagePayload, User } from "./cytube"
+import type { Channel, CytubeOutgoing, MessagePayload, PlaylistItem, User } from "./cytube"
 import type { EventEmitter } from 'node:events'
 import type { Module } from "./module"
 
@@ -18,7 +18,10 @@ export interface State {}
  * Events a CyTube instance might emit to the modules
  */
 export type ChannelEvents = {
-    chatMsg: MessagePayload
+    chatMsg: MessagePayload,
+    userJoined: User,
+    userLeft: User,
+    setCurrent: PlaylistItem
 }
 
 /**

@@ -10,7 +10,7 @@
 import type { Socket } from "socket.io-client";
 import type { SocketState } from "./types/state";
 import { bind, end, type Effect, type Kind } from "./types/effects";
-import type { CytubeEvents, PlaylistItem } from "./types/cytube";
+import type { CytubeEvents, PlaylistItem, User } from "./types/cytube";
 
 export function socketState(
     socket: Socket, name: string, username: string, password: string, wb: string
@@ -77,9 +77,14 @@ export const eventHandler:
     ),
     
     userlist: (users, { newState }) => newState({users}),
-    addUser: (user, { newState, users }) => newState({users: [...users, user]}),
-    userLeave: ({ name }, { newState, users }) =>
-        newState({users: users.filter(user => user.name != name)}),
+    addUser: (user, state) => bind(
+        state.newState({users: [...state.users, user]}),
+        _ => state.emit('userJoined', user)
+    ),
+    userLeave: ({ name }, state) => bind(
+        state.newState({users: state.users.filter(user => user.name != name)}),
+        _ => state.emit('userLeft', state.user(name) as User)
+    ),
 
     playlist: (playlist, { newState }) => newState({playlist}),
     queue: ({ item, after }, { playlist: oldpl, newState }) => {
@@ -107,7 +112,13 @@ export const eventHandler:
     },
     delete: ({ uid }, { playlist, newState }) =>
         newState({playlist: playlist.filter(item => item.uid != uid)}),
-    setCurrent: (currentItem, { newState }) => newState({currentItem}),
+    setCurrent: (currentItem, { newState, emit }) => bind(
+        newState({currentItem}),
+        (ss) => {
+            const cm = ss.currentMedia()
+            return cm == undefined ? end() : ss.emit('setCurrent', cm)
+        }
+    ),
     
     chatMsg(msg, state) {
         if(msg.time < state.started.getTime())

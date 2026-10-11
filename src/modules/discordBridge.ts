@@ -142,9 +142,7 @@ export const channelEvents: ChannelHandlers = {
 
 export const discordEvents: DiscordHandlers = {
     messageCreate(state, message) {
-        const chan =
-            Object.entries(state.channels)
-            .find(([_, ch]) => ch.discordChannel == message.channelId)
+        const chan = state.getCytubeFromDiscord(message.channelId)
 
         if(chan == undefined)
             return end()
@@ -152,6 +150,6 @@ export const discordEvents: DiscordHandlers = {
         if(isDiscordMessageForwarded(message))
             return end()
 
-        return forwardDiscordToCytube(message, chan[1])
+        return forwardDiscordToCytube(message, chan)
     },
 }

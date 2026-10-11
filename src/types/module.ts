@@ -6,7 +6,7 @@
  * How each module should behave
  */
 
-import type { ClientEvents } from "discord.js"
+import type { ClientEvents, SlashCommandBuilder } from "discord.js"
 import type { Channel } from "./cytube"
 import type { Effect } from "./effects"
 import type { ChannelEvents, State } from "./state"
@@ -23,5 +23,6 @@ export type DiscordHandlers = Partial<{
 
 export type Module = {
     channelEvents?: ChannelHandlers,
-    discordEvents?: DiscordHandlers
+    discordEvents?: DiscordHandlers,
+    discordCommands?: Array<SlashCommandBuilder>
 }

@@ -14,7 +14,9 @@ import type { Module } from "./module"
 import type { Client } from "discord.js"
 
 export interface State {
-    channels: {[name: string]: Channel}
+    channels: {[name: string]: Channel},
+
+    getCytubeFromDiscord(id: string): Channel | undefined
 }
 
 /**

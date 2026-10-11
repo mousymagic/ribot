@@ -51,6 +51,8 @@ const handlers: {[k in Kind]: (_: Argument<k>, state: BotState) =>
     http: r => fetch(r),
     body: r => r.text(),
     log: (text) => console.log(`[Log]: ${text}`),
+    replyInteraction:
+        ({ interaction, contents }) => interaction.reply(contents),
 
     // Internal super secret stuff
     socketemit: async ({ name: channelname, event, message }, state) => {
@@ -103,6 +105,14 @@ const state: BotState = {
     emitter: new EventEmitter(),
     channels: {},
     dc,
+
+    getCytubeFromDiscord(id) {
+        for(const [_, channel] of Object.entries(this.channels)) {
+            if(channel.discordChannel == id)
+                return channel
+        }
+        return undefined
+    }
 }
 
 // Log into CyTube channels
@@ -126,7 +136,10 @@ for(const [name, info] of Object.entries(config.channels)) {
 }
 
 // Initialize modules
-const modules: Module[] = [require('./modules/discordBridge')]
+const modules: Module[] = [
+    require('./modules/discordBridge'),
+    require('./modules/queueCommand')
+]
 
 for(const { channelEvents, discordEvents } of modules) {
     for(const [event, handler] of Object.entries(channelEvents ?? {})) {

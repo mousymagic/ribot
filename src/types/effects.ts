@@ -7,6 +7,9 @@
  * performed. These effects can be chained to form some sort of monad.
  */
 
+import type {
+    ChatInputCommandInteraction, InteractionReplyOptions, InteractionResponse
+} from "discord.js";
 import type { SocketState } from "./state";
 
 /**
@@ -98,6 +101,7 @@ type Definitions =
   | Define<'http', Request, Response>
   | Define<'body', Response, string>
   | Define<'log', string>
+  | replyInteractionEffect
     /**
      * Channel related stuff
      */
@@ -105,3 +109,8 @@ type Definitions =
   | Define<
       'socketstate', { name: string, next: Partial<SocketState> }, SocketState>
   | Define<'socketemit', { name: string, event: string, message: any }>
+
+type replyInteractionEffect = Define<'replyInteraction', {
+    interaction: ChatInputCommandInteraction,
+    contents: string | InteractionReplyOptions
+}, InteractionResponse>

@@ -4,6 +4,7 @@ import type { State, SocketState, BotState } from './types/state'
 import { eventHandler, socketState } from './cytubeProtocol'
 import EventEmitter from 'node:events'
 import type { Module } from './types/module'
+import { ChannelType, Client, Events, GatewayIntentBits } from 'discord.js'
 
 type Config = {
     channels: {[name: string]: {
@@ -12,7 +13,8 @@ type Config = {
         secure?: boolean
         username: string,
         password: string,
-        webhook: string
+        webhook: string,
+        discordChannel: string
     }},
     discord: {
         token: string
@@ -110,7 +112,8 @@ for(const [name, info] of Object.entries(config.channels)) {
         name,
         info.username,
         info.password,
-        info.webhook
+        info.webhook,
+        info.discordChannel
     )
     state.channels[name] = ss
 

@@ -59,6 +59,10 @@ export type Channel = Readonly<{
     drinks: number,
     playlist: PlaylistItem[],
     webhook: string,
+    /**
+     * Id of the Discord channel that its syncing on
+     */
+    discordChannel: string,
 
     user(name: string): User | undefined,
     media(uid: PlaylistItem['uid']): PlaylistItem | undefined,

@@ -136,19 +136,22 @@ export const channelEvents: ChannelHandlers = {
         const content =
             `Now playing... [${item.media.title}](${getMediaUrl(item)})\n`
             + `-# Added by ${item.queueby}`
-        console.log(`SENDING ${content}`)
         return postToWebhook(webhook, {content})
     },
 }
 
 export const discordEvents: DiscordHandlers = {
     messageCreate(state, message) {
-        console.log('message create')
+        const chan =
+            Object.entries(state.channels)
+            .find(([_, ch]) => ch.discordChannel == message.channelId)
+
+        if(chan == undefined)
+            return end()
+
         if(isDiscordMessageForwarded(message))
             return end()
 
-        const chan = state.channels.perdonporexistir
-        if(chan == undefined) return end()
-        return forwardDiscordToCytube(message, chan)
+        return forwardDiscordToCytube(message, chan[1])
     },
 }

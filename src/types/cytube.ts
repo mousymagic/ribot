@@ -68,6 +68,7 @@ export type Channel = Readonly<{
     media(uid: PlaylistItem['uid']): PlaylistItem | undefined,
     currentMedia(): PlaylistItem | undefined
     sendMessage(msg: string): Effect<'socketemit'>
+    setTemp(uid: number, temp: boolean): Effect<'socketemit'>,
 }>
 
 type MessageClass = 'server-whisper' | 'shout' | 'drink' | 'action' | 'spoiler'
@@ -211,5 +212,6 @@ export type CytubeEvents = {
 export type CytubeOutgoing = {
     joinChannel: { name: string },
     login: { name: string, pw: string },
-    chatMsg: Pick<MessagePayload, 'msg' | 'meta'>
+    chatMsg: Pick<MessagePayload, 'msg' | 'meta'>,
+    setTemp: { uid: number, temp: boolean },
 }

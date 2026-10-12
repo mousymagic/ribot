@@ -42,6 +42,9 @@ export function socketState(
         sendMessage(msg) {
             return this.send('chatMsg', {msg, meta: {}})
         },
+        setTemp(uid, temp) {
+            return this.send('setTemp', { uid, temp })
+        },
 
         socket,
         status: 'unconnected',
@@ -136,6 +139,9 @@ export const eventHandler:
             return cm == undefined ? end() : ss.emit('setCurrent', cm)
         }
     ),
+    setTemp: ({ uid, temp }, { newState, playlist }) =>
+        newState({playlist: playlist.map(item =>
+            item.uid == uid ? {...item, temp} : item)}),
     
     chatMsg(msg, state) {
         if(msg.time < state.started.getTime())

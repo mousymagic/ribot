@@ -10,7 +10,8 @@
   },
   "license": "MIT",
   "scripts": {
-    "start": "bun ./src/index.ts"
+    "start": "bun ./src/index.ts",
+    "registerCommands": "bun ./registerCommands.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"

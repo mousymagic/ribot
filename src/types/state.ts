@@ -26,7 +26,8 @@ export type ChannelEvents = {
     chatMsg: MessagePayload,
     userJoined: User,
     userLeft: User,
-    setCurrent: PlaylistItem
+    setCurrent: PlaylistItem,
+    queue: PlaylistItem,
 }
 
 /**

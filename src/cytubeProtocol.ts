@@ -102,6 +102,7 @@ export const eventHandler:
     setLeader: (name, { newState }) =>
         newState({leader: name == '' ? null : name}),
 
+    // Playlist related
     playlist: (playlist, { newState }) => newState({playlist}),
     queue: ({ item, after }, { playlist: oldpl, newState }) => {
         const playlist: PlaylistItem[] =
@@ -110,7 +111,7 @@ export const eventHandler:
             : after == 'append' ? [...oldpl, item]
             : oldpl.flatMap(i => i.uid == after ? [i, item] : [i])
 
-        return newState({playlist})
+        return bind(newState({playlist}), s => s.emit('queue', item))
     },
     moveVideo: ({ from, after }, state) => {
         const item = state.media(from)

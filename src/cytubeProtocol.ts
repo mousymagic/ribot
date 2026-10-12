@@ -32,6 +32,8 @@ export function socketState(
         isPausingMedia: false,
 
         turns: null,
+
+        lastAddedRandomVideo: null,
         
         user(name: string) {
             return this.users.find(user => user.name == name)
@@ -56,6 +58,9 @@ export function socketState(
         },
         moveMedia(from, after) {
             return this.send('moveMedia', { from, after: after ?? 'prepend' })
+        },
+        addVideo(type, id) {
+            return this.send('queue', {id, type, pos: 'end', temp: true})
         },
 
         socket,

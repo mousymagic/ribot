@@ -71,6 +71,8 @@ export type Channel = Readonly<{
      */
     turns: {name: string, turn: number}[] | null,
 
+    lastAddedRandomVideo: string | null,
+
     user(name: string): User | undefined,
     media(uid: PlaylistItem['uid']): PlaylistItem | undefined,
     currentMedia(): PlaylistItem | undefined
@@ -79,7 +81,8 @@ export type Channel = Readonly<{
     setTemp(uid: number, temp: boolean): Effect<'socketemit'>,
     jumpTo(uid: number): Effect<'socketemit'>,
     pauseMedia(pause: boolean): Effect<'pauseMedia'>,
-    moveMedia(from: number, after?: number): Effect<'socketemit'>
+    moveMedia(from: number, after?: number): Effect<'socketemit'>,
+    addVideo(type: MediaProvider, id: string): Effect<'socketemit'>
 }>
 
 type MessageClass = 'server-whisper' | 'shout' | 'drink' | 'action' | 'spoiler'
@@ -227,5 +230,11 @@ export type CytubeOutgoing = {
     chatMsg: Pick<MessagePayload, 'msg' | 'meta'>,
     setTemp: { uid: number, temp: boolean },
     jumpTo: number,
-    moveMedia: { from: number, after: number | 'prepend' }
+    moveMedia: { from: number, after: number | 'prepend' },
+    queue: {
+        id: string,
+        type: MediaProvider,
+        pos: 'next' | 'end',
+        temp: boolean
+    }
 }

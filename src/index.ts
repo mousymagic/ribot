@@ -177,7 +177,8 @@ for(const [name, info] of Object.entries(config.channels)) {
 const modules: Module[] = [
     require('./modules/discordBridge'),
     require('./modules/queueCommand'),
-    require('./modules/turnSystem')
+    require('./modules/turnSystem'),
+    require('./modules/randomCommand')
 ]
 
 for(const { channelEvents, discordEvents } of modules) {

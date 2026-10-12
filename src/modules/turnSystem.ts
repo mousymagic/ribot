@@ -13,7 +13,7 @@ import type { ChannelHandlers } from "../types/module";
  * This code yearns for the state machines
  */
 function playMediaOfCurrentTurn(channel: Channel, jumped: Boolean): Effect {
-    if(channel.turns == undefined)
+    if(channel.turns == null)
         return end()
 
     const curmedia = channel.currentMedia()
@@ -63,9 +63,9 @@ export const channelEvents: ChannelHandlers = {
         if(msg != '/turn')
             return end()
 
-        if(channel.turns != undefined) {
+        if(channel.turns != null) {
             return bind(
-                channel.newState({ turns: undefined }),
+                channel.newState({ turns: null }),
                 _ => channel.pauseMedia(false),
                 _ => channel.sendMessage('Turn system is off')
             )
@@ -80,7 +80,7 @@ export const channelEvents: ChannelHandlers = {
         )
     },
     queue({ queueby, uid }, channel, state) {
-        if(channel.turns == undefined)
+        if(channel.turns == null)
             return end()
 
         // If this user already has a turn, see if it should play next

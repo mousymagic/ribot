@@ -69,7 +69,7 @@ export type Channel = Readonly<{
      *  Undefined means turn system is off. A rotating array of turns where the
      * first element indicates who is next and the last element who will be last
      */
-    turns?: {name: string, turn: number}[],
+    turns: {name: string, turn: number}[] | null,
 
     user(name: string): User | undefined,
     media(uid: PlaylistItem['uid']): PlaylistItem | undefined,

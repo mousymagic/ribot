@@ -31,7 +31,7 @@ export function socketState(
         discordChannel: id,
         isPausingMedia: false,
 
-        turns: undefined,
+        turns: null,
         
         user(name: string) {
             return this.users.find(user => user.name == name)

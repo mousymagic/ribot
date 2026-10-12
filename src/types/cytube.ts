@@ -3,114 +3,238 @@
  * @author lauraestupida
  * @license MIT
  * 
- * Types for CyTube events or data structures
+ * Useful types for dealing with CyTube events
  */
 
-export type ChatMsgPayload = {
+import type { Effect } from "./effects";
+
+export const Permissions = [
+    'seeplaylist', 'playlistadd', 'playlistnext', 'playlistmove',
+    'playlistdelete', 'playlistjump', 'playlistaddlist', 'oplaylistadd',
+    'oplaylistnext', 'oplaylistmove', 'oplaylistdelete', 'oplaylistjump',
+    'oplaylistaddlist', 'playlistaddcustom', 'playlistaddrawfile',
+    'playlistaddlive', 'exceedmaxlength', 'addnontemp', 'settemp',
+    'playlistshuffle', 'playlistclear', 'pollctl', 'pollvote', 'viewhiddenpoll',
+    'voteskip', 'viewvoteskip', 'mute', 'kick', 'ban', 'motdedit', 'filteredit',
+    'filterimport', 'emoteedit', 'emoteimport', 'playlistlock', 'leaderctl',
+    'drink', 'chat', 'chatclear', 'exceedmaxitems', 'deletefromchannellib',
+    'exceedmaxdurationperuser',
+] as const
+
+export type Permission = typeof Permissions[number]
+
+export type User = Readonly<{
+    name: string;
+    rank: number;
+    profile: Readonly<{ image: string, text: string }>;
+    meta: Readonly<{
+        afk: boolean,
+        muted: boolean,
+        smuted?: boolean,
+        aliases?: string[],
+        ip?: string
+    }>
+}>
+
+export type Emote = Readonly<{
+    name: string;
+    image: string;
+    source: string;
+}>
+
+export type Channel = Readonly<{
+    name: string;
+    /**
+     * Username of the account that is logged into this channel
+     */
+    username: string;
+    /**
+     * Password of the account that is logged into this channel
+     */
+    password: string;
+    leader: string | null;
+    rank: number;
+    emotes: Emote[];
+    users: User[];
+    drinks: number,
+    playlist: PlaylistItem[],
+    webhook: string,
+    /**
+     * Id of the Discord channel that its syncing on
+     */
+    discordChannel: string,
+    isPausingMedia: boolean,
+
+    /**
+     *  Undefined means turn system is off. A rotating array of turns where the
+     * first element indicates who is next and the last element who will be last
+     */
+    turns: {name: string, turn: number}[] | null,
+
+    lastAddedRandomVideo: string | null,
+
+    user(name: string): User | undefined,
+    media(uid: PlaylistItem['uid']): PlaylistItem | undefined,
+    currentMedia(): PlaylistItem | undefined
+    sendMessage(msg: string): Effect<'socketemit'>
+    newState(next: Partial<Channel>): Effect<'socketstate'>,
+    setTemp(uid: number, temp: boolean): Effect<'socketemit'>,
+    jumpTo(uid: number): Effect<'socketemit'>,
+    pauseMedia(pause: boolean): Effect<'pauseMedia'>,
+    moveMedia(from: number, after?: number): Effect<'socketemit'>,
+    addVideo(type: MediaProvider, id: string): Effect<'socketemit'>
+}>
+
+type MessageClass = 'server-whisper' | 'shout' | 'drink' | 'action' | 'spoiler'
+
+export type MessagePayload = Readonly<{
     username: string,
     msg: string,
     time: number,
-    meta: any
-}
+    meta: {
+        addClass?: MessageClass,
+        addClassToNameAndTimestamp?: boolean,
+        forceShowName?: true,
+        action?: boolean
+    }
+}>
 
-export type EmotePayload = {
-    name: string,
-    image: string,
-    source: string
-}
+export type MediaProvider =
+  | 'yt' // yifftube
+  | 'vi' // vimeo
+  | 'dm' // dailymotion
+  | 'sc' // soundcloud
+  | 'li' // livestream.com
+  | 'tw' // twitch
+  | 'tv' // twitch vod
+  | 'tc' // twitch clip
+  | 'rt' // rtmp stream
+  | 'hl' // hls stream
+  | 'cu' // custom embed
+  | 'gd' // google docs
+  | 'fi' // ffmpeg
+  | 'sb' // streamable
+  | 'pt' // peertube
+  | 'cm' // custom media
+  | 'bc' // bitchute
+  | 'od' // odysee
+  | 'bn' // bandcamp
+  | 'nv' // niconico
 
-export type Permission =
-    'seeplaylist' | 'playlistadd' | 'playlistnext' | 'playlistmove' |
-    'playlistdelete' | 'playlistjump' | 'playlistaddlist' | 'oplaylistadd' |
-    'oplaylistnext' | 'oplaylistmove' | 'oplaylistdelete' | 'oplaylistjump' |
-    'oplaylistaddlist' | 'playlistaddcustom' | 'playlistaddrawfile' |
-    'playlistaddlive' | 'exceedmaxlength' | 'addnontemp' | 'settemp' |
-    'playlistshuffle' | 'playlistclear' | 'pollctl' | 'pollvote' |
-    'viewhiddenpoll' | 'voteskip' | 'viewvoteskip' | 'mute' | 'kick' | 'ban' |
-    'motdedit' | 'filteredit' | 'filterimport' | 'emoteedit' | 'emoteimport' |
-    'playlistlock' | 'leaderctl' | 'drink' | 'chat' | 'chatclear' |
-    'exceedmaxitems' | 'deletefromchannellib' | 'exceedmaxdurationperuser'
-
-export type UserRank = -1 | 1 | 1.5 | 2 | 3 | 4 | 5
-
-export type Permissions = {[perm in Permission]: UserRank}
-
-export type AddUserPayload = {
-    name: string,
-    rank: UserRank,
-    profile: object,
-    meta: object
-}
-
-export type UserLeavePayload = { name: string }
-
-export type SetUserRankPayload = {
-    name: string,
-    rank: UserRank
-}
-
-export type UserCountPayload = number
-
-export type ChangeMediaPayload = {
-    id: string,
-    title: string,
-    seconds: number,
-    duration: string,
-    type: 'yt',
-    meta: object,
-    currentTime: number,
-    paused: boolean
-}
-
-export type MediaUpdatePayload = {
-    currentTime: number,
-    paused: boolean
-}
-
-export type SetAFKPayload = {
-    name: string,
-    afk: boolean
-}
-
-export type SetLeaderPayload = string
-
-export type SetPlaylistMeta = {
-    count: number,
-    rowTime: number,
-    time: string
-}
-
-export type QueueItem = {
+export type PlaylistItem = Readonly<{
     media: {
         id: string,
         title: string,
         seconds: number,
         duration: string,
-        type: 'yt',
-        meta: object,
+        type: MediaProvider,
+        meta: {
+            embed?: {
+                src?: string,
+                onlyLong?: boolean,
+                domain?: string,
+                uuid?: string,
+                short?: string,
+            }
+        },
     }
     uid: number,
     temp: boolean,
     queueby: string
+}>
+
+
+// https://github.com/calzoneman/sync/blob/3.0/www/js/util.js#L25
+export function getMediaUrl({ media }: PlaylistItem): string {
+    const {type, id, meta: { embed }} = media
+
+    function livestreamcom() {
+        const [account, event] = id.split(';')
+        return `https://livestream.com/accounts/${account}/events/${event}`
+    }
+    function peertube() {
+        return embed === undefined ? '#'
+             : embed.onlyLong === undefined ? '#'
+             : embed.domain === undefined ? '#'
+             : !embed.onlyLong && embed.short === undefined ? '#'
+             : !embed.onlyLong ? `https://${embed.domain}/w/${embed.short}`
+             : embed.uuid === undefined ? '#'
+             : `https://${embed.domain}/videos/watch/${embed.uuid}`
+    }
+    function bandcamp() {
+        const [artist, track] = id.split(';')
+        return `https://${artist}.bandcamp.com/track/${track}`
+    }
+    function odysee() {
+        const [user, video] = id.split(';');
+        return `https://odysee.com/@${user}/${video}`;
+    }
+
+    return type == 'yt' ? `https://www.youtube.com/watch?v=${id}`
+         : type == 'vi' ? `https://vimeo.com/${id}`
+         : type == 'dm' ? `https://dailymotion.com/video/${id}`
+         : type == 'sc' ? id
+         : type == 'li' ? livestreamcom()
+         : type == 'tw' ? `https://twitch.tv/${id}`
+         : type == 'rt' ? id
+         : type == 'gd' ? `https://docs.google.com/file/d/${id}`
+         : type == 'fi' ? id
+         : type == 'hl' ? id
+         : type == 'sb' ? `https://streamable.com/${id}`
+         : type == 'tc' ? `https://clips.twitch.tv/${id}`
+         : type == 'cm' ? id
+         : type == 'cu' ? (embed?.src ?? '#')
+         : type == 'pt' ? peertube()
+         : type == 'bc' ? `https://www.bitchute.com/video/${id}`
+         : type == 'bn' ? bandcamp()
+         : type == 'od' ? odysee()
+         : `https://www.nicovideo.jp/watch/${id}`
 }
 
-export type PlaylistPayload = QueueItem[]
-
-export type QueuePayload = {
-    item: QueueItem,
-    after: number | 'prepend'
+/**
+ * Every event that the CyTube socket sends alongside its data type
+ */
+export type CytubeEvents = {
+    connect: null,
+    login: { success: boolean, name: string },
+    emoteList: Emote[],
+    userlist: User[],
+    addUser: User,
+    userLeave: Pick<User, 'name'>,
+    setUserRank: Pick<User, 'name' | 'rank'>,
+    drinkCount: number,
+    setUserMeta: Pick<User, 'name' | 'meta'>,
+    setAFK: { name: string, afk: boolean }
+    chatMsg: MessagePayload,
+    playlist: PlaylistItem[],
+    moveVideo: {
+        from: PlaylistItem['uid'],
+        after: PlaylistItem['uid'] | 'prepend' | 'append'
+    },
+    queue: {
+        item: PlaylistItem,
+        after: PlaylistItem['uid'] | 'prepend' | 'append'
+    },
+    delete: Pick<PlaylistItem, 'uid'>,
+    setCurrent: PlaylistItem['uid'],
+    setLeader: User['name'],
+    setTemp: { uid: number, temp: boolean }
 }
 
-export type MoveVideoPayload = {
-    from: number,
-    after: number | 'prepend'
-}
-
-export type DeletePayload = { uid: number }
-
-export type SetCurrentPayload = number
-
-export type SetTempPayload = {
-    uid: number,
-    temp: boolean
+/**
+ * Every event we can send to CyTube alongside its data type
+ */
+export type CytubeOutgoing = {
+    joinChannel: { name: string },
+    login: { name: string, pw: string },
+    chatMsg: Pick<MessagePayload, 'msg' | 'meta'>,
+    setTemp: { uid: number, temp: boolean },
+    jumpTo: number,
+    moveMedia: { from: number, after: number | 'prepend' },
+    queue: {
+        id: string,
+        type: MediaProvider,
+        pos: 'next' | 'end',
+        temp: boolean
+    }
 }

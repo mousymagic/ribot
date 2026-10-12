@@ -3,43 +3,66 @@
  * @author lauraestupida
  * @license MIT
  * 
- * The entire state of the bot
+ * The bot internal state that shouldn't be modified
  */
 
-import * as cytube from './cytube'
+import type { Socket } from "socket.io-client"
+import type { Effect } from "./effects"
+import type { Channel, CytubeOutgoing, MessagePayload, PlaylistItem, User } from "./cytube"
+import type { EventEmitter } from 'node:events'
+import type { Module } from "./module"
+import type { Client } from "discord.js"
 
-import { EventEmitter } from 'node:events'
-import { Socket } from 'socket.io-client'
+export interface State {
+    channels: {[name: string]: Channel},
 
-export type State = {
-    events: EventEmitter,
+    getCytubeFromDiscord(id: string): Channel | undefined
+}
 
-    // Cytube auth information
-    host: string,
-    port: string, secure: boolean,
-    username: string,
-    password: string,
-    channel: string,
-    channelPassword?: string,
+/**
+ * Events a CyTube instance might emit to the modules
+ */
+export type ChannelEvents = {
+    chatMsg: MessagePayload,
+    userJoined: User,
+    userLeft: User,
+    setCurrent: PlaylistItem,
+    queue: PlaylistItem,
+}
 
-    // Cytube session
-    socket: Socket,
-    emotes: cytube.EmotePayload[],
-    playlist: cytube.QueueItem[],
+/**
+ * The state each CyTube instance manages
+ */
+
+export type SocketState = Channel & {
+    readonly socket: Socket,
+    status: 'unconnected' | 'connected' | 'logged',
+    started: Date,
     currentItem: number,
-    rank: cytube.UserRank,
-    permissions?: cytube.Permissions,
-    leader: string,
-    playlistLocked: boolean,
     mediaUpdateInterval?: NodeJS.Timeout,
-    
-    // Discord auth
-    webhook?: string,
-    token: string,
 
-    // Bot session
-    turnSystemEnabled: boolean,
-    turns: string[],
-    currentTurn: number,
-    waitingForTurn: boolean,
+    newState(next: Partial<SocketState>): Effect<'socketstate'>
+    emit<E extends keyof ChannelEvents>(event: E, data: ChannelEvents[E]):
+        Effect<'channelevent'>
+
+    /**
+     * Sends an event to the socket
+     */
+    send<E extends keyof CytubeOutgoing>(event: E, payload: CytubeOutgoing[E]):
+        Effect<'socketemit'>
+    
+    updateUser(name: string, userinfo: Partial<User>):
+        Effect<'socketstate'> | null
+}
+
+/**
+ * State of the entire bot
+ */
+export type BotState = State & {
+    /**
+     * Each connection to a channel needs its own socket
+     */
+    channels: {[name: string]: SocketState},
+    emitter: EventEmitter,
+    dc: Client
 }

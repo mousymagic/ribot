@@ -1,0 +1,174 @@
+/**
+ * @file cytubeProtocol.ts
+ * @author lauraestupida
+ * @license MIT
+ * 
+ *  Handles incoming events from a CyTube socket and handles them accordingly to
+ * the protocol. This module performs no side effects by its own.
+ */
+
+import type { Socket } from "socket.io-client";
+import type { SocketState } from "./types/state";
+import { bind, end, type Effect, type Kind } from "./types/effects";
+import type { CytubeEvents, PlaylistItem, User } from "./types/cytube";
+
+export function socketState(
+    socket: Socket, name: string, username: string, password: string,
+    webhook: string, id: string
+): SocketState {
+    return {
+        name,
+        leader: null,
+        username,
+        password,
+        rank: -1,
+        emotes: [],
+        playlist: [],
+        users: [],
+        drinks: 0,
+        currentItem: -1,
+        webhook,
+        discordChannel: id,
+        isPausingMedia: false,
+
+        turns: null,
+
+        lastAddedRandomVideo: null,
+        
+        user(name: string) {
+            return this.users.find(user => user.name == name)
+        },
+        media(uid: number) {
+            return this.playlist.find(item => item.uid == uid)
+        },
+        currentMedia() {
+            return this.media(this.currentItem)
+        },
+        sendMessage(msg) {
+            return this.send('chatMsg', {msg, meta: {}})
+        },
+        setTemp(uid, temp) {
+            return this.send('setTemp', { uid, temp })
+        },
+        jumpTo(uid) {
+            return this.send('jumpTo', uid)
+        },
+        pauseMedia(pause) {
+            return ['pauseMedia', { name, pause }]
+        },
+        moveMedia(from, after) {
+            return this.send('moveMedia', { from, after: after ?? 'prepend' })
+        },
+        addVideo(type, id) {
+            return this.send('queue', {id, type, pos: 'end', temp: true})
+        },
+
+        socket,
+        status: 'unconnected',
+        started: new Date(),
+        mediaUpdateInterval: undefined,
+
+        newState: next => ['socketstate', { name, next }],
+        send: (event, message) => ['socketemit', { name, event, message }],
+        emit: (event, data) => ['channelevent', { name, event, data }],
+
+        updateUser(name, next) {
+            const index = this.users.findIndex(user => user.name == name)
+            const user = index != -1 ? this.users[index] : undefined
+            if(user === undefined)
+                return null
+            const users = this.users.with(index, {...user, ...next})
+            return this.newState({users})
+        },
+    }
+}
+
+/**
+ * How to handle every event coming from the CyTube socket
+ */
+export const eventHandler:
+    {[event in keyof CytubeEvents]: 
+        (payload: CytubeEvents[event], state: SocketState) => Effect<Kind>} =
+{
+    connect: (_, { status, newState, name, username, password, send }) => bind(
+        status != 'unconnected' ? end() : ['log', 'Connecting...'],
+        _ => newState({status: 'connected'}),
+        _ => send('joinChannel', { name }),
+        _ => send('login', { name: username, pw: password })
+    ),
+    login: ({ success }, { newState, username }) => bind(
+        success ? newState({status: 'logged'})
+                : end(['error', `Couldn't login as ${username}`]),
+        _ => ['log', `Logged in as ${username}`]
+    ),
+    
+    userlist: (users, { newState }) => newState({users}),
+    addUser: (user, state) => bind(
+        state.newState({users: [...state.users, user]}),
+        _ => state.emit('userJoined', user)
+    ),
+    userLeave: ({ name }, state) => bind(
+        state.newState({users: state.users.filter(user => user.name != name)}),
+        _ => state.emit('userLeft', state.user(name) as User)
+    ),
+    setUserMeta: ({ name, meta }, { newState, users }) =>
+        newState({users: users.map(u => u.name == name ? {...u, meta} : u)}),
+    setUserRank: ({ name, rank }, { newState, users }) =>
+        newState({users: users.map(u => u.name == name ? {...u, rank} : u)}),
+    setAFK: ({ name, afk }, { newState, users }) =>
+        newState({
+            users: users.map(u =>
+                u.name == name ? {...u, meta: {...u.meta, afk}} : u)
+            }),
+    setLeader: (name, { newState }) =>
+        newState({leader: name == '' ? null : name}),
+
+    // Playlist related
+    playlist: (playlist, { newState }) => newState({playlist}),
+    queue: ({ item, after }, { playlist: oldpl, newState }) => {
+        const playlist: PlaylistItem[] =
+            oldpl.length == 0 ? [item]
+            : after == 'prepend' ? [item, ...oldpl]
+            : after == 'append' ? [...oldpl, item]
+            : oldpl.flatMap(i => i.uid == after ? [i, item] : [i])
+
+        return bind(newState({playlist}), s => s.emit('queue', item))
+    },
+    moveVideo: ({ from, after }, state) => {
+        const item = state.media(from)
+        if(item === undefined)
+            return end(['error', `Item with uid ${from} doesn't exist`])
+
+        const withoutItem = state.playlist.filter(i => i != item)
+
+        const playlist: PlaylistItem[] =
+            after == 'prepend' ? [item, ...withoutItem]
+            : after == 'append' ? [...withoutItem, item]
+            : withoutItem.flatMap(i => i.uid == after ? [i, item] : [i])
+
+        return state.newState({playlist})
+    },
+    delete: ({ uid }, { playlist, newState }) =>
+        newState({playlist: playlist.filter(item => item.uid != uid)}),
+    setCurrent: (currentItem, { newState, emit }) => bind(
+        newState({currentItem}),
+        (ss) => {
+            const cm = ss.currentMedia()
+            return cm == undefined ? end() : ss.emit('setCurrent', cm)
+        }
+    ),
+    setTemp: ({ uid, temp }, { newState, playlist }) =>
+        newState({playlist: playlist.map(item =>
+            item.uid == uid ? {...item, temp} : item)}),
+    
+    chatMsg(msg, state) {
+        if(msg.time < state.started.getTime())
+            return end()
+        
+        return state.emit('chatMsg', msg)
+    },
+
+    emoteList: (emotes, { newState }) => newState({emotes}),
+
+    drinkCount: (drinks, { newState }) => newState({drinks}),
+}

@@ -53,6 +53,44 @@ const handlers: {[k in Kind]: (_: Argument<k>, state: BotState) =>
     log: (text) => console.log(`[Log]: ${text}`),
     replyInteraction:
         ({ interaction, contents }) => interaction.reply(contents),
+    pauseMedia({ name, pause }, state) {
+        const channel = state.channels[name]
+        if(channel == undefined || pause == channel.isPausingMedia)
+            return
+
+        if(!pause) {
+            if(channel.leader == channel.username)
+                channel.socket.emit('assignLeader', { name: channel.username })
+            channel.mediaUpdateInterval?.close()
+            channel.mediaUpdateInterval = undefined
+            channel.isPausingMedia = false
+            return
+        }
+
+        function mediaUpdate() {
+            const channel = state.channels[name]
+            if(channel == undefined)
+                return
+
+            if(channel.leader != channel.username)
+                channel.socket.emit('assignLeader', { name: channel.username })
+
+            const media = channel.currentMedia()
+            if(media == undefined)
+                return
+
+            channel.socket.emit('mediaUpdate', {
+                id: media.media.id,
+                currentTime: 0,
+                paused: true,
+                type: media.media.type
+            })
+        }
+
+        mediaUpdate()
+        channel.mediaUpdateInterval = setInterval(mediaUpdate, 5000)
+        channel.isPausingMedia = true
+    },
 
     // Internal super secret stuff
     socketemit: async ({ name: channelname, event, message }, state) => {
@@ -138,7 +176,8 @@ for(const [name, info] of Object.entries(config.channels)) {
 // Initialize modules
 const modules: Module[] = [
     require('./modules/discordBridge'),
-    require('./modules/queueCommand')
+    require('./modules/queueCommand'),
+    require('./modules/turnSystem')
 ]
 
 for(const { channelEvents, discordEvents } of modules) {

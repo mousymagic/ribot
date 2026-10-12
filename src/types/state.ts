@@ -39,6 +39,7 @@ export type SocketState = Channel & {
     status: 'unconnected' | 'connected' | 'logged',
     started: Date,
     currentItem: number,
+    mediaUpdateInterval?: NodeJS.Timeout,
 
     newState(next: Partial<SocketState>): Effect<'socketstate'>
     emit<E extends keyof ChannelEvents>(event: E, data: ChannelEvents[E]):

@@ -63,12 +63,23 @@ export type Channel = Readonly<{
      * Id of the Discord channel that its syncing on
      */
     discordChannel: string,
+    isPausingMedia: boolean,
+
+    /**
+     *  Undefined means turn system is off. A rotating array of turns where the
+     * first element indicates who is next and the last element who will be last
+     */
+    turns?: {name: string, turn: number}[],
 
     user(name: string): User | undefined,
     media(uid: PlaylistItem['uid']): PlaylistItem | undefined,
     currentMedia(): PlaylistItem | undefined
     sendMessage(msg: string): Effect<'socketemit'>
+    newState(next: Partial<Channel>): Effect<'socketstate'>,
     setTemp(uid: number, temp: boolean): Effect<'socketemit'>,
+    jumpTo(uid: number): Effect<'socketemit'>,
+    pauseMedia(pause: boolean): Effect<'pauseMedia'>,
+    moveMedia(from: number, after?: number): Effect<'socketemit'>
 }>
 
 type MessageClass = 'server-whisper' | 'shout' | 'drink' | 'action' | 'spoiler'
@@ -204,6 +215,7 @@ export type CytubeEvents = {
     delete: Pick<PlaylistItem, 'uid'>,
     setCurrent: PlaylistItem['uid'],
     setLeader: User['name'],
+    setTemp: { uid: number, temp: boolean }
 }
 
 /**
@@ -214,4 +226,6 @@ export type CytubeOutgoing = {
     login: { name: string, pw: string },
     chatMsg: Pick<MessagePayload, 'msg' | 'meta'>,
     setTemp: { uid: number, temp: boolean },
+    jumpTo: number,
+    moveMedia: { from: number, after: number | 'prepend' }
 }

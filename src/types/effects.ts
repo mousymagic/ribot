@@ -102,6 +102,7 @@ type Definitions =
   | Define<'body', Response, string>
   | Define<'log', string>
   | replyInteractionEffect
+  | Define<'pauseMedia', { name: string, pause: boolean }>
     /**
      * Channel related stuff
      */

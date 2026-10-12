@@ -29,6 +29,9 @@ export function socketState(
         currentItem: -1,
         webhook,
         discordChannel: id,
+        isPausingMedia: false,
+
+        turns: undefined,
         
         user(name: string) {
             return this.users.find(user => user.name == name)
@@ -45,10 +48,20 @@ export function socketState(
         setTemp(uid, temp) {
             return this.send('setTemp', { uid, temp })
         },
+        jumpTo(uid) {
+            return this.send('jumpTo', uid)
+        },
+        pauseMedia(pause) {
+            return ['pauseMedia', { name, pause }]
+        },
+        moveMedia(from, after) {
+            return this.send('moveMedia', { from, after: after ?? 'prepend' })
+        },
 
         socket,
         status: 'unconnected',
         started: new Date(),
+        mediaUpdateInterval: undefined,
 
         newState: next => ['socketstate', { name, next }],
         send: (event, message) => ['socketemit', { name, event, message }],
